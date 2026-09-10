@@ -1,0 +1,20 @@
+IMPERIAL FITNESS v1.21.0 — RELEASE MANIFEST
+Fecha de preparación: 2026-09-10
+
+Entrega consolidada: una sola raíz desplegable.
+Experiencias: Imperial Fitness Pro + Lite + Premium/PWA.
+Migración nueva obligatoria antes del backend: backend/supabase/migrations/036_imperial_lite_professional_v1.21.0.sql
+
+Verificaciones ejecutadas en el entorno de auditoría:
+- Python compileall backend/app + backend/tests + scripts: OK
+- production_readiness_check.py: OK
+- prelaunch_guard_v121.py: OK
+- secret_scan.py: OK
+- parser TypeScript sobre 101 archivos TS/TSX: 0 errores de sintaxis
+- generador PDF ReportLab: PDF A4 válido generado
+
+Limitación del entorno de auditoría:
+- No fue posible ejecutar pytest completo ni npm ci/typecheck/vitest/build con dependencias limpias porque el entorno no pudo resolver/descargar paquetes externos. GitHub Actions queda configurado para ejecutar esas pruebas en CI antes de promover a producción.
+- No se aplicaron cambios directamente en Supabase/Render/Vercel del propietario porque este chat no tiene credenciales/control de esas cuentas.
+
+No declarar producción verificada hasta completar DESPLIEGUE_IMPERIAL_FITNESS_v1.21.0.md y obtener CI verde.

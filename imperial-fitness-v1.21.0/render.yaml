@@ -1,0 +1,79 @@
+services:
+  - type: web
+    name: imperial-fitness-api
+    env: python
+    rootDir: .
+    buildCommand: cd backend && pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: cd backend && sh -c 'uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers "${WEB_CONCURRENCY:-2}" --limit-concurrency "${UVICORN_LIMIT_CONCURRENCY:-200}" --backlog 1024 --timeout-keep-alive 5 --proxy-headers --forwarded-allow-ips="*"'
+    healthCheckPath: /health/live
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: CORS_ORIGINS
+        value: https://imperialfitnesgym.com.co,https://www.imperialfitnesgym.com.co
+      - key: TRUSTED_HOSTS
+        value: imperial-fitness-api.onrender.com,imperialfitnesgym.com.co,www.imperialfitnesgym.com.co
+      - key: FRONTEND_URL
+        value: https://imperialfitnesgym.com.co
+      - key: BACKEND_URL
+        value: https://imperial-fitness-api.onrender.com
+      - key: WEB_CONCURRENCY
+        value: 2
+      - key: UVICORN_LIMIT_CONCURRENCY
+        value: 200
+      - key: DB_POOL_SIZE
+        value: 3
+      - key: DB_MAX_OVERFLOW
+        value: 2
+      - key: DB_POOL_RECYCLE_SECONDS
+        value: 900
+      - key: RATE_LIMIT_ENABLED
+        value: true
+      - key: RATE_LIMIT_PER_MINUTE
+        value: 90
+      - key: SLOWAPI_ENABLED
+        value: true
+      - key: AUDIT_LOG_ENABLED
+        value: true
+      - key: REQUEST_ID_HEADER
+        value: X-Request-ID
+      - key: SIGNED_URL_EXPIRE_SECONDS
+        value: 600
+      - key: STORAGE_MODE
+        value: cloudinary
+      - key: PRIVATE_UPLOAD_DIR
+        value: private_uploads
+      - key: AI_MODE
+        value: local_rules
+      - key: ASYNC_JOBS_ENABLED
+        value: true
+      - key: LOG_LEVEL
+        value: INFO
+      - key: ENABLE_HSTS
+        value: true
+      - key: METRICS_ENABLED
+        value: true
+      - key: DB_AUTO_CREATE
+        value: false
+      - key: DB_DISABLE_PREPARED_STATEMENTS
+        value: true
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
+      - key: UPTIME_CHECK_TOKEN
+        sync: false

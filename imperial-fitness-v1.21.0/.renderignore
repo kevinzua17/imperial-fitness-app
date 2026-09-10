@@ -1,0 +1,10 @@
+node_modules
+dist
+docs/archive
+private_uploads/*
+uploads/*
+*.zip
+*.db
+*.log
+__pycache__
+.pytest_cache

@@ -1,0 +1,29 @@
+Imperial Fitness v1.16.0 - validación ejecutada
+Fecha: 2026-07-23
+
+VALIDACIONES CORRECTAS
+- Parse sintáctico de 92 archivos TypeScript/TSX mediante el compilador TypeScript: 0 errores de parseo.
+- Compilación de sintaxis Python en backend/app: correcta.
+- Escaneo de secretos: correcto; no se detectaron credenciales evidentes en el paquete versionable.
+- Verificación de preparación para producción: correcta.
+- Estructura del marcador de publicación nutricional revisada.
+- La rutina publicada conserva days y exercises dentro de payload_json.
+- El envío final vuelve a consultar dieta y rutina antes de declarar éxito.
+- El diagnóstico de Stefanny ahora revisa training_days y total_exercises.
+- Consultas nutricionales y de rutina con encabezados no-store.
+- Service Worker actualizado de caché v11 a v12.
+
+LIMITACIONES DEL ENTORNO
+- npm ci --offline no pudo completarse porque yallist-3.1.1 no estaba disponible en la caché del registro interno.
+- Por esa razón no se ejecutaron npm run build, la suite Vitest completa ni el typecheck con todas las dependencias reales.
+- pytest no inició porque este entorno no tiene instalado el módulo Python `jose` requerido por el backend (python-jose).
+- Las suites completas deben ejecutarse en Render, CI o un equipo con acceso a los registros de dependencias.
+
+PRUEBA MANUAL OBLIGATORIA DESPUÉS DEL DESPLIEGUE
+1. Seleccionar a Stefanny.
+2. Sincronizar y revisar su plan.
+3. Generar o completar la rutina si figura incompleta.
+4. Presionar Guardar y enviar planes.
+5. Confirmar el mensaje verde de verificación.
+6. Ingresar como Stefanny y presionar Actualizar plan.
+7. Confirmar días, ejercicios, alimentación y fecha de publicación.

@@ -1,0 +1,15 @@
+backend
+scripts
+sql
+deploy
+docs/archive
+private_uploads
+uploads
+*.md
+!README.md
+.env*
+*.zip
+*.db
+*.log
+__pycache__
+.pytest_cache

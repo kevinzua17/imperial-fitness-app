@@ -1,0 +1,38 @@
+Imperial Fitness v1.15.0 - validación ejecutada
+
+[1] Parse TS/TSX
+OK: 94 archivos TS/TSX
+
+[2] TypeScript estricto del motor de rutinas
+OK: motor y dependencias locales
+
+[3] Ejecución real por grupo muscular y divisiones
+Catálogo local verificado: 74
+pecho: 6 OK
+espalda: 6 OK
+hombro: 6 OK
+biceps: 6 OK
+triceps: 6 OK
+cuadriceps: 4 OK
+femoral: 5 OK
+gluteo: 3 OK
+pantorrilla: 3 OK
+abdomen: 3 OK
+aductor: 2 OK
+abductor: 1 OK
+full_body_3: 3 días OK
+torso_pierna_4: 4 días OK
+ppl_3: 3 días OK
+ppl_6: 6 días OK
+arnold_6: 6 días OK
+gap: 3 días OK
+
+[4] Python y protección active
+OK: actualización genérica no puede desactivar la rutina
+
+[5] Seguridad y preparación
+OK - no se detectaron secretos evidentes en el paquete versionable.
+OK - paquete listo para validación de producción controlada.
+
+RESULTADO: VALIDACIONES DISPONIBLES COMPLETADAS CORRECTAMENTE
+NOTA: npm ci/verify:frontend y pytest completo requieren acceso al registro de dependencias.

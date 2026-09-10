@@ -1,0 +1,28 @@
+VALIDACIÓN IMPERIAL FITNESS v1.17.0
+Fecha: 2026-07-25
+
+EJECUTADO CORRECTAMENTE
+- Compilación sintáctica de todos los archivos Python: OK.
+- Validación directa de AssignedRoutineCreate con payload JSON superior a 100.000 caracteres: OK.
+- Rechazo explícito de payload superior a 500.000 caracteres sin truncar JSON: OK.
+- Escaneo de secretos con scripts/secret_scan.py: OK.
+- Revisión de preparación de producción con scripts/production_readiness_check.py: OK.
+- Revisión estática del flujo entrenador -> guardado -> diagnóstico -> acceso del cliente: OK.
+- Versión package.json, package-lock.json y backend: 1.17.0.
+- Caché PWA: v13.
+
+PRUEBAS AÑADIDAS AL REPOSITORIO
+- Rutina profesional superior a 50.000 caracteres.
+- Diagnóstico integral del camino de entrega de la rutina.
+
+LIMITACIÓN DEL ENTORNO DE REVISIÓN
+- La suite pytest completa no pudo ejecutarse porque el índice de paquetes no ofreció python-jose y otras dependencias del backend.
+- npm ci no finalizó porque el registro interno respondió HTTP 503 para varias dependencias. Por ello no se afirma que la suite completa de Vitest/TypeScript/build haya pasado en este entorno.
+- El TypeScript fue analizado sintácticamente con el compilador global; la verificación integral requiere ejecutar npm ci en GitHub Actions, Vercel o un equipo con acceso normal al registro.
+
+VALIDACIÓN OBLIGATORIA EN PRODUCCIÓN
+1. Ejecutar diagnose_stefanny_delivery_v1.17.sql en Supabase.
+2. Confirmar migraciones 031 y 032.
+3. Verificar /health y /health/ready en Render.
+4. Desplegar frontend en Vercel y comprobar caché v13.
+5. Iniciar sesión con la cuenta exacta de Stefanny y abrir Plan personal.
