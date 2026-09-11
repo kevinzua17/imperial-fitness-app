@@ -1,0 +1,22 @@
+IMPERIAL FITNESS v1.20.1 - REGISTRO DE VALIDACIÓN
+=================================================
+
+APROBADO
+- Compilación sintáctica con TypeScript transpileModule: 94 archivos TS/TSX.
+- Compilación de sintaxis Python: backend/app y scripts.
+- Guardia estática v1.20.1 aprobada.
+- Migraciones 034 y 035 revisadas sin DROP TABLE, DROP COLUMN, TRUNCATE, DELETE FROM ni UPDATE public.users.
+- Migración 035 no referencia password_hash ni token_version.
+- Proxy /api presente antes del fallback SPA en vercel.json.
+- Cookie refresh usa Path=/ y elimina cookie heredada Path=/auth.
+- Restauración de sesión no llama logout por errores temporales.
+- Módulo activo se conserva en URL y almacenamiento local.
+- Historial corporal se solicita con cache=no-store.
+- Selección de cliente evita usar al administrador como cliente temporal.
+- Readiness verifica measured_at, recorded_at y bmr_source.
+- Archivos __pycache__, node_modules y secretos excluidos del paquete.
+
+LIMITACIÓN DEL ENTORNO
+- npm ci no pudo completarse porque el registro interno no contiene yallist-3.1.1.tgz.
+- Por esa limitación no se ejecutó el build Vite completo dentro de este entorno.
+- La sintaxis de los 94 archivos TypeScript/TSX sí fue validada con el compilador TypeScript global.

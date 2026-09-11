@@ -1,0 +1,30 @@
+IMPERIAL FITNESS v1.18.0 - VALIDACIÓN TÉCNICA
+Fecha de preparación: 2026-07-25
+
+VALIDACIONES COMPLETADAS
+[OK] Compilación sintáctica de backend/app con Python compileall.
+[OK] Sintaxis de los componentes y servicios TypeScript/TSX modificados mediante TypeScript transpileModule.
+[OK] 9 casos dirigidos de cálculo de membresía: manual, vencimiento manual, pendiente de validación, prueba, activa, próxima a vencer, vencida, limitada y suspendida.
+[OK] Escaneo de secretos versionables.
+[OK] Revisión automatizada de preparación para producción.
+[OK] Versiones alineadas: frontend 1.18.0, backend 1.18.0 y service worker v14.
+[OK] Migración 033 y diagnóstico de verificación incluidos.
+[OK] /health/ready comprueba las 11 columnas y los 2 triggers de la migración 033.
+[OK] Protección para que el estado actual no quede sin su fecha principal.
+
+LIMITACIONES DEL ENTORNO DE VALIDACIÓN
+[NO COMPLETADO] npm ci / npm run typecheck / npm run build completos.
+Motivo: el registro de dependencias configurado devolvió HTTP 503 al descargar yallist-3.1.1.tgz. La revisión sintáctica dirigida de los archivos modificados sí fue completada.
+
+[NO COMPLETADO] Suite completa pytest.
+Motivo: el entorno no incluye todas las dependencias del backend (por ejemplo jose/passlib) y el registro disponible no permitió completar la instalación. La compilación Python y las pruebas puras de la lógica modificada sí pasaron.
+
+VALIDACIÓN OBLIGATORIA EN PRODUCCIÓN
+1. Ejecutar backend/supabase/migrations/033_access_membership_dates_and_manual_control.sql.
+2. Ejecutar backend/supabase/diagnostics/verify_v1.18_access_membership_dates.sql.
+3. Desplegar Render y confirmar /health/ready con:
+   - routine_single_active_guard: true
+   - access_membership_dates_ready: true
+   - status: ready
+4. Desplegar Vercel.
+5. Probar con un cliente de prueba antes de modificar fechas reales.

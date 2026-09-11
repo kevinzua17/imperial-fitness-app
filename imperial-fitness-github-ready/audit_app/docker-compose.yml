@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: imperial-postgres
+    environment:
+      POSTGRES_DB: imperial_fitness
+      POSTGRES_USER: imperial
+      POSTGRES_PASSWORD: imperial_local_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/supabase/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U imperial -d imperial_fitness"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: imperial-api
+    env_file:
+      - backend/.env.example
+    environment:
+      APP_ENV: local
+      DATABASE_URL: postgresql://imperial:imperial_local_password@postgres:5432/imperial_fitness
+      SECRET_KEY: local-dev-secret-change-me
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080
+      TRUSTED_HOSTS: localhost,127.0.0.1,api
+      STORAGE_MODE: local
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: imperial-web
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:

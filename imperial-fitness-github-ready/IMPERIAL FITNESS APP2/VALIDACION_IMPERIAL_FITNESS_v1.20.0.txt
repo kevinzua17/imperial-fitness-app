@@ -1,0 +1,29 @@
+IMPERIAL FITNESS v1.20.0 — VALIDACIÓN DEL CANDIDATO DE LANZAMIENTO
+Fecha: 5 de agosto de 2026
+Rama: hardening-v1.20.0
+
+RESULTADOS APROBADOS EN COPIA AISLADA
+- 31/31 pruebas independientes: motor nutricional, calorías/macros por gramos, compatibilidad de relaciones ORM, entrega Cloudinary, resiliencia Redis, flujo borrador/publicación y seguridad de migración.
+- Compilación sintáctica Python de backend/app y scripts.
+- Transpilación sintáctica de 94 archivos TypeScript/TSX del frontend.
+- Creación de esquema SQLite v1.20.0 y conservación de users.password_hash.
+- Escaneo de secretos del paquete versionable.
+- Guardia pre-lanzamiento: migración aditiva, dominios definidos y archivos críticos de autenticación sin cambios.
+- Readiness ampliado para exigir RLS en tablas sensibles, Redis disponible en producción y diagnóstico SQL de rol/políticas.
+- git diff --check sin errores de espacios ni conflictos.
+
+PROTECCIÓN DE DATOS EXISTENTES
+- No se ejecutó ninguna conexión ni escritura contra Supabase de producción.
+- No se modificaron backend/app/routers/auth.py, backend/app/security.py, backend/app/deps.py ni backend/app/routers/recovery.py.
+- La migración 034 no contiene DROP, TRUNCATE, DELETE FROM, cambios de password_hash ni eliminación de columnas.
+- El rollback normal revierte únicamente el código y conserva las columnas aditivas.
+
+VALIDACIONES QUE DEBEN COMPLETARSE EN LOS SERVICIOS REALES
+- Backup verificable y diagnóstico SQL antes/después de migrar Supabase.
+- Build real de Vercel. La instalación limpia local de npm no terminó porque el registro de paquetes disponible no entregó la dependencia transitiva yallist.
+- Suite integral FastAPI. El entorno local no dispone de python-jose; las pruebas puras nuevas sí fueron ejecutadas.
+- Verificación de variables, planes y métricas reales de Supabase, Render, Vercel y Cloudinary.
+- Prueba de carga de solo lectura y apertura gradual 10 -> 50 -> 150 -> 500.
+
+ESTADO
+CANDIDATO DE LANZAMIENTO CONTROLADO. No certificar 9.8/10 ni abrir a 500 usuarios hasta aprobar todos los bloqueantes de docs/CHECKLIST_LANZAMIENTO_500_v1.20.0.md.

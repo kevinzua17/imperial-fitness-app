@@ -1,0 +1,18 @@
+IMPERIAL FITNESS v1.20.5 — VALIDACIÓN DEL HOTFIX DE DIETAS
+Fecha: 2026-08-05
+
+RESULTADOS
+- Compilación sintáctica Python: OK.
+- 96 archivos TypeScript/TSX revisados sintácticamente: OK.
+- Typecheck aislado del nuevo equilibrador: OK.
+- Escaneo de secretos: OK.
+- Diagnóstico de preparación existente: OK.
+- Equilibrador backend probado en 7 escenarios entre 1500 y 3500 kcal: 7/7 OK.
+- Equilibrador frontend probado en 4 escenarios: 4/4 OK.
+- Validación posterior con los mismos límites de producción: OK.
+- Conservación de alimentos y cantidad de comidas: OK.
+- No se modificó autenticación, password_hash, usuarios, roles ni sesiones.
+- No requiere migración Supabase.
+
+LÍMITE DEL ENTORNO
+La suite completa de pytest no se ejecutó porque el entorno de trabajo no contiene python-jose. Las funciones nuevas fueron importadas y ejecutadas directamente, y todos los archivos Python fueron compilados correctamente.

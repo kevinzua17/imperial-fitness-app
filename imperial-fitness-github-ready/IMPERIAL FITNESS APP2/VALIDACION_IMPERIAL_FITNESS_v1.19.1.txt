@@ -1,0 +1,17 @@
+Imperial Fitness v1.19.1
+
+[OK] Backend APP_VERSION = 1.19.1
+[OK] Frontend package version = 1.19.1
+[OK] PWA cache = imperial-fitness-shell-v16
+[OK] Python compileall
+[OK] TypeScript/TSX syntax transpilation: 94 files
+[OK] package.json, package-lock.json and vercel.json
+[OK] secret_scan.py
+[OK] production_readiness_check.py
+[OK] Admin recovery SQL included
+[OK] Admin verification SQL included
+[OK] Login error differentiation
+[OK] /health/ready admin_access_ready
+[OK] Environment example files restored
+
+Limitación: no se completó la instalación total de npm en el entorno de revisión, por lo que no se afirma que se haya ejecutado la suite completa de pruebas y build con todas las dependencias.

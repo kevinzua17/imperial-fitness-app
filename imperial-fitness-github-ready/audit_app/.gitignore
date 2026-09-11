@@ -1,0 +1,64 @@
+# ==============================
+# Imperial Fitness - Git ignore
+# ==============================
+
+# Dependencias frontend
+node_modules/
+
+# Builds frontend / Capacitor
+build/
+dist/
+www/
+.android/
+.ios/
+android/.gradle/
+android/app/build/
+ios/App/build/
+
+# Variables privadas / credenciales
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+backend/.env.local
+backend/.env.production
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+
+# Python / backend
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Base de datos local / archivos generados
+*.sqlite
+*.sqlite3
+*.db
+uploads/*
+backend/uploads/*
+!uploads/.gitkeep
+!backend/uploads/.gitkeep
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

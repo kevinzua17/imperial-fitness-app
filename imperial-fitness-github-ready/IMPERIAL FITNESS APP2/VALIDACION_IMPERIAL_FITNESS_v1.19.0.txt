@@ -1,0 +1,30 @@
+IMPERIAL FITNESS v1.19.0 — VALIDACIÓN
+=====================================
+
+RESULTADOS CORRECTOS
+- Backend Python: compileall OK.
+- Escaneo de secretos: OK.
+- Production readiness check: OK.
+- Sintaxis TypeScript/TSX mediante transpileModule: OK en los archivos modificados.
+- Cantidad de plantillas: 9.
+- Títulos únicos: 9.
+- Audiencias: Mujer, Hombre y General.
+- Niveles por audiencia: Principiante, Intermedio y Avanzado.
+- División solicitada para Mujer: verificada.
+- División solicitada para Hombre: verificada.
+- Días con ejercicios vacíos: 0.
+- Ejercicios incompletos en las plantillas: 0.
+- Nombres de ejercicios sin correspondencia en el catálogo local: 0.
+- Persistencia de metadatos de plantilla: incluida.
+- Protección de cambios estructurales: incluida.
+- Ajuste de series, repeticiones, descanso, carga, RIR y notas sin desbloquear: incluido.
+- Versión frontend/package: 1.19.0.
+- Versión backend: 1.19.0.
+- Caché PWA: v15.
+
+LIMITACIÓN DEL ENTORNO DE VALIDACIÓN
+- No se pudo ejecutar la suite completa de npm/Vitest ni el typecheck de proyecto con resolución total de módulos porque las dependencias npm no estaban instaladas y la descarga del registro falló/agotó el tiempo.
+- Esta limitación no se oculta: se hizo validación sintáctica de los archivos modificados, validación funcional de la biblioteca y controles estáticos del backend.
+
+SUPABASE
+- No requiere migración SQL nueva.

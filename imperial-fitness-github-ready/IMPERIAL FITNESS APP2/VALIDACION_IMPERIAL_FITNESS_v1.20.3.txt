@@ -1,0 +1,35 @@
+IMPERIAL FITNESS v1.20.3 — VALIDACIÓN DEL HOTFIX DE SESIÓN
+Fecha: 5 de agosto de 2026
+
+OBJETIVO
+- Mantener la sesión al presionar F5 o recargar la página.
+- Regresar al mismo módulo mediante ?tab= y imperial_last_active_tab.
+- No modificar usuarios, password_hash, correos, roles ni sesiones guardadas en Supabase.
+
+CAMBIOS VERIFICADOS
+- El access token temporal se guarda en sessionStorage, no en localStorage.
+- bootstrapLegacyAccessToken restaura el token de sessionStorage antes de consultar /auth/me.
+- clearAccessToken elimina el token de sessionStorage al cerrar sesión.
+- El login conserva el último módulo permitido en lugar de forzar Dashboard.
+- Se incrementaron las versiones del service worker para evitar servir una copia antigua.
+- Los archivos críticos backend/app/routers/auth.py, backend/app/security.py,
+  backend/app/deps.py y backend/app/routers/recovery.py permanecen idénticos a v1.20.2.
+
+VALIDACIONES APROBADAS
+- Guardia estática v1.20.3: OK.
+- 95 archivos TypeScript/TSX sin errores sintácticos: OK.
+- Prueba de ejecución login -> F5 -> restauración -> logout: OK.
+- Compilación sintáctica de Python: OK.
+- Escaneo de secretos: OK.
+- Comparación de autenticación crítica contra v1.20.2: OK.
+
+LIMITACIÓN DEL ENTORNO
+- npm ci no pudo completarse porque el registro interno no entregó yallist-3.1.1.
+  Por ello, el build integral de Vite y Vitest debe ejecutarse en GitHub/Vercel.
+
+DESPLIEGUE
+- No requiere ejecutar SQL.
+- Mantener VITE_USE_SAME_ORIGIN_API=false.
+- Mantener VITE_API_BASE_URL con la URL de Render que ya funciona.
+- Desplegar Vercel sin caché.
+- Después del despliegue, iniciar sesión una sola vez y probar F5 en cada módulo.
