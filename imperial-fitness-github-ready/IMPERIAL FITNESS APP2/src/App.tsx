@@ -28,6 +28,7 @@ const ClientPlanView = lazy(() => import('./components/ClientPlanView').then(mod
 const ProgressHubView = lazy(() => import('./components/ProgressHubView').then(module => ({ default: module.ProgressHubView })));
 const CoachHubView = lazy(() => import('./components/CoachHubView').then(module => ({ default: module.CoachHubView })));
 const AccountHubView = lazy(() => import('./components/AccountHubView').then(module => ({ default: module.AccountHubView })));
+const StaffHubView = lazy(() => import('./components/StaffHubView').then(module => ({ default: module.StaffHubView })));
 const SocialWallView = lazy(() => import('./components/SocialWallView').then(module => ({ default: module.SocialWallView })));
 const TokenShopView = lazy(() => import('./components/TokenShopView').then(module => ({ default: module.TokenShopView })));
 const ProgressAnalyticsView = lazy(() => import('./components/ProgressAnalyticsView').then(module => ({ default: module.ProgressAnalyticsView })));
@@ -684,6 +685,10 @@ export default function App() {
 
         {currentUser.role === 'client' && activeTab === 'coach_hub' && (
           <CoachHubView currentUser={currentUser} />
+        )}
+
+        {currentUser.role !== 'client' && activeTab === 'staff_hub' && (
+          <StaffHubView currentUser={currentUser} onNavigateTab={switchTabSafely} />
         )}
 
         {activeTab === 'timer' && (

@@ -1,8 +1,8 @@
-# Imperial Fitness v1.21.0 Simple — Trazabilidad de los 21 puntos de auditoría
+# Imperial Fitness v1.21.1 Simple Staff — Trazabilidad de los 21 puntos de auditoría
 
 Este documento relaciona la auditoría inicial con los cambios implementados en el proyecto.
 
-| # | Hallazgo / recomendación | Implementación v1.21.0 |
+| # | Hallazgo / recomendación | Implementación v1.21.1 |
 |---|---|---|
 | 1 | Reducir complejidad global sin reconstruir todo | Se conserva backend/módulos existentes y se simplifica la capa visible del cliente. |
 | 2 | Cliente con demasiados módulos | Navegación cliente reducida a **Hoy, Mi plan, Progreso, Mi coach y Perfil**. |
@@ -36,11 +36,11 @@ Este documento relaciona la auditoría inicial con los cambios implementados en 
 - Dashboard cliente antiguo duplicado eliminado.
 - Metadatos `NutritionTargetApi` compatibles con persistencia en `calculation`.
 - Creación de plan evita usar `archived` como estado de creación.
-- Script de empaquetado actualizado para v1.21.0.
+- Script de empaquetado actualizado para v1.21.1.
 
 ## Criterio de “100% listo para producción”
 
-Funcionalmente y estructuralmente el paquete v1.21.0 está preparado para la última compuerta de CI. La etiqueta de producción debe colocarse **solo después** de que un entorno con acceso a npm complete:
+Funcionalmente y estructuralmente el paquete v1.21.1 está preparado para la última compuerta de CI. La etiqueta de producción debe colocarse **solo después** de que un entorno con acceso a npm complete:
 
 ```bash
 npm ci

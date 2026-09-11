@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { type FC, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
   Archive,
@@ -27,7 +27,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { ClientProfile } from '../data/mockData';
-import { getAllowedModules, moduleLabel } from '../app/modules';
+import { getNavigationModules, moduleLabel } from '../app/modules';
+import { APP_VERSION } from '../app/version';
 import { ImperialLogoMark } from './ImperialLogoMark';
 import { getUnreadChatCountFromApi } from '../services/chatService';
 import { getRecoveryPendingCountFromApi } from '../services/recoveryService';
@@ -64,9 +65,10 @@ const ICONS: Record<string, LucideIcon> = {
   user_management: ShieldCheck,
   implementation: Rocket,
   finance: DollarSign,
+  staff_hub: Menu,
 };
 
-export const Navigation: React.FC<NavigationProps> = ({
+export const Navigation: FC<NavigationProps> = ({
   currentUser,
   activeTab,
   setActiveTab,
@@ -130,7 +132,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   }, []);
 
   const tabs = useMemo(
-    () => getAllowedModules(currentUser.role, devMode).map(module => ({
+    () => getNavigationModules(currentUser.role, devMode).map(module => ({
       ...module,
       label: moduleLabel(module, currentUser.role),
       icon: ICONS[module.id] || Menu,
@@ -160,7 +162,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           <ImperialLogoMark size="sm" />
           <div>
             <span className="block text-sm font-extrabold tracking-widest text-white">IMPERIAL<span className="text-red-600">FIT</span></span>
-            <span className="block text-[9px] uppercase tracking-wider text-neutral-500">Fitness Club</span>
+            <span className="block text-[9px] uppercase tracking-wider text-neutral-500">Fitness Club · v{APP_VERSION}</span>
           </div>
         </div>
 
@@ -180,7 +182,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               </span>
             </span>
             <span className="flex items-center gap-2 text-[10px] font-black uppercase text-neutral-400">
-              {currentUser.role === 'client' ? 'Menú' : 'Módulos'}
+              {currentUser.role === 'client' ? 'Menú' : 'Menú'}
               <ChevronDown className={`h-4 w-4 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
             </span>
           </button>
@@ -188,9 +190,9 @@ export const Navigation: React.FC<NavigationProps> = ({
           {menuOpen && (
             <nav
               role="menu"
-              className={`absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 max-h-[70vh] overflow-y-auto rounded-2xl border border-neutral-800 bg-neutral-950 p-2 shadow-[0_24px_80px_rgba(0,0,0,0.75)] md:left-1/2 md:right-auto md:-translate-x-1/2 ${currentUser.role === 'client' ? 'md:w-[420px]' : 'md:w-[620px]'}`}
+              className={`absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 max-h-[70vh] overflow-y-auto rounded-2xl border border-neutral-800 bg-neutral-950 p-2 shadow-[0_24px_80px_rgba(0,0,0,0.75)] md:left-1/2 md:right-auto md:-translate-x-1/2 ${currentUser.role === 'client' ? 'md:w-[420px]' : 'md:w-[520px]'}`}
             >
-              <div className={`grid grid-cols-1 gap-1 sm:grid-cols-2 ${currentUser.role === 'client' ? '' : 'md:grid-cols-3'}`}>
+              <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
                 {tabs.map(tab => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -218,11 +220,11 @@ export const Navigation: React.FC<NavigationProps> = ({
                   );
                 })}
               </div>
-              {currentUser.role === 'client' && (
-                <p className="px-3 pb-1 pt-3 text-[10px] leading-relaxed text-neutral-500">
-                  Cinco accesos principales: hoy, plan, progreso, coach y perfil. Las herramientas secundarias aparecen dentro del flujo cuando las necesitas.
-                </p>
-              )}
+              <p className="px-3 pb-1 pt-3 text-[10px] leading-relaxed text-neutral-500">
+                {currentUser.role === 'client'
+                  ? 'Cinco accesos principales: hoy, plan, progreso, coach y perfil.'
+                  : 'Navegación simplificada: las herramientas avanzadas están agrupadas en el Centro de gestión.'}
+              </p>
             </nav>
           )}
         </div>

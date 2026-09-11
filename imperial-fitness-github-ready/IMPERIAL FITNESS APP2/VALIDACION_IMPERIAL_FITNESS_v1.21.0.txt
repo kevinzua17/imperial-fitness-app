@@ -1,10 +1,10 @@
-IMPERIAL FITNESS v1.21.0 SIMPLE — VALIDACION DE ENTREGA
+IMPERIAL FITNESS v1.21.1 SIMPLE — VALIDACION DE ENTREGA
 Fecha: 2026-09-11
 
 RESULTADOS EJECUTADOS EN EL ENTORNO DE PREPARACION
 [OK] Python compileall: backend/app sin errores sintácticos.
 [OK] Secret scan: no se detectaron secretos evidentes en el paquete versionable.
-[OK] Production readiness v1.21.0: controles estáticos superados.
+[OK] Production readiness v1.21.1: controles estáticos superados.
 [OK] TypeScript/TSX parser: 110 archivos parseados sin errores sintácticos.
 [OK] Validación semántica asistida de los archivos v1.21 modificados: sin diagnósticos estructurales relevantes después de las correcciones.
 [OK] PDF smoke test: PDF A4 válido, 2 páginas, con rutina/alimentación/asset local.

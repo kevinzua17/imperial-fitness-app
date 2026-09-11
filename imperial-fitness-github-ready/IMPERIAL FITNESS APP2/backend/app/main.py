@@ -28,7 +28,7 @@ from app.routers import auth, challenges, chat, checkins, community, exercises, 
 
 
 settings = get_settings()
-APP_VERSION = "1.21.0"
+APP_VERSION = "1.21.1"
 configure_logging()
 upload_root = Path(settings.upload_dir)
 private_upload_root = Path(settings.private_upload_dir)
@@ -99,7 +99,7 @@ def health():
 
 @app.get("/health/live")
 def live():
-    return {"status": "alive"}
+    return {"status": "alive", "version": APP_VERSION}
 
 
 @app.get("/health/ready")

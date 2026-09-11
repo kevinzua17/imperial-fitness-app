@@ -1,4 +1,4 @@
-# Imperial Fitness v1.21.0 Simple — Actualización segura
+# Imperial Fitness v1.21.1 Simple Staff — Actualización segura
 
 ## Si tu base de Supabase YA está en uso
 
@@ -9,9 +9,9 @@
 1. Haz backup/snapshot de la base de datos y conserva una copia del proyecto v1.20.x.
 2. En Supabase SQL Editor ejecuta `MIGRACION_035_RESTAURAR_HISTORIAL_Y_SESION_v1.20.1.sql` (la versión corregida incluida en este paquete).
 3. Revisa el resumen final: idealmente `medidas_sin_fecha_real = 0`, `medidas_sin_fecha_registro = 0` y `tmb_sin_fuente = 0` cuando los datos existentes permitan completarlos.
-4. Ejecuta `MIGRACION_036_SEGURIDAD_NUTRICIONAL_Y_EXPERIENCIA_SIMPLE_v1.21.0.sql`.
-5. Despliega el backend v1.21.0.
-6. Despliega el frontend v1.21.0.
+4. Ejecuta `MIGRACION_036_SEGURIDAD_NUTRICIONAL_Y_EXPERIENCIA_SIMPLE_v1.21.1.sql`.
+5. Despliega el backend v1.21.1.
+6. Despliega el frontend v1.21.1.
 7. Ejecuta en CI o en un equipo con acceso al registro npm:
 
 ```bash
@@ -36,7 +36,7 @@ npm run build
 
 ## Si instalas una base DESDE CERO
 
-Ejecuta el esquema y las migraciones en el orden documentado en `backend/supabase/DEPLOY_ORDER.md`. En v1.21.0 las migraciones 027/028 ya fueron corregidas para crear las columnas temporales con el mismo tipo que `created_at` y no crear el índice funcional que causaba `ERROR 42P17`.
+Ejecuta el esquema y las migraciones en el orden documentado en `backend/supabase/DEPLOY_ORDER.md`. En v1.21.1 las migraciones 027/028 ya fueron corregidas para crear las columnas temporales con el mismo tipo que `created_at` y no crear el índice funcional que causaba `ERROR 42P17`.
 
 ## Regla de salida a producción
 

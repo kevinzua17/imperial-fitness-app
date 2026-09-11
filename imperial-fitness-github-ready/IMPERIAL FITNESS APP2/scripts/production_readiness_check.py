@@ -39,9 +39,11 @@ REQUIRED_FILES = [
     "docs/CHECKLIST_LANZAMIENTO_500_v1.20.0.md",
     "docs/ROLLBACK_v1.20.0.md",
     "CHANGELOG_v1.20.0.md",
-    "CHANGELOG_v1.21.0.md",
+    "CHANGELOG_v1.21.1.md",
     "src/app/modules.ts",
     "src/components/ClientPlanView.tsx",
+    "src/components/StaffHubView.tsx",
+    "src/app/version.ts",
     "src/components/ProgressHubView.tsx",
     "src/components/CoachHubView.tsx",
     "src/components/AccountHubView.tsx",
@@ -111,7 +113,7 @@ def main() -> int:
     assert_contains("backend/supabase/migrations/034_nutrition_exercise_launch_hardening.sql", ["begin;", "commit;", "add column if not exists"])
     assert_contains("backend/supabase/migrations/035_restore_body_metrics_history_and_session.sql", ["pg_advisory_xact_lock", "bmr_source", "No se crea idx_body_metrics_user_effective_date_desc"] )
     assert_contains("backend/supabase/migrations/036_simplified_experience_nutrition_safety.sql", ["food_allergies", "food_intolerances", "medical_conditions", "medications"])
-    assert_contains("src/app/modules.ts", ["dashboard", "personal_plan", "progress_hub", "coach_hub", "profile"])
+    assert_contains("src/app/modules.ts", ["dashboard", "personal_plan", "progress_hub", "coach_hub", "staff_hub", "navVisible", "profile"])
     assert_contains("backend/app/routers/reports.py", ["plan.pdf", "build_plan_pdf"])
     assert_contains("backend/app/services/plan_pdf.py", ["reportlab", "routine", "diet"])
 
@@ -122,7 +124,7 @@ def main() -> int:
     if "coalesce(measured_at, created_at) desc" in migration_028 and "--   (user_id, coalesce" not in migration_028:
         raise AssertionError("028 todavía contiene un índice funcional COALESCE activo")
 
-    print("OK - paquete v1.21.0 Simple pasó los controles estáticos de preparación disponibles.")
+    print("OK - paquete v1.21.1 Simple pasó los controles estáticos de preparación disponibles.")
     return 0
 
 
