@@ -45,26 +45,102 @@ def _target_user_id(payload_user_id: int | None, current_user: User, db: Session
     return payload_user_id
 
 
-def _calculate_progression_suggestion(exercise_name: str, weight_kg: float, reps: int, rir: int | None, db: Session, user_id: int) -> str:
-    previous = (
-        db.query(WorkoutSetLog)
-        .filter(WorkoutSetLog.user_id == user_id, WorkoutSetLog.exercise_name == exercise_name)
-        .order_by(WorkoutSetLog.created_at.desc())
-        .first()
+def _calculate_progression_suggestion(
+    exercise_name: str,
+    weight_kg: float,
+    reps: int,
+    rir: int | None,
+    db: Session,
+    user_id: int,
+    *,
+    set_number: int = 1,
+    target_min_reps: int | None = None,
+    target_max_reps: int | None = None,
+    target_sets: int | None = None,
+    target_rir: int | None = None,
+) -> str:
+    """Sugerencia conservadora de doble progresión.
+
+    Cuando la rutina envía contexto, la carga solo sube tras completar la
+    última serie prescrita y alcanzar el techo del rango en todas las series
+    recientes de la sesión. Sin contexto mantiene un fallback 8-12.
+    """
+    min_reps = int(target_min_reps or 8)
+    max_reps = int(target_max_reps or 12)
+    if max_reps < min_reps:
+        min_reps, max_reps = max_reps, min_reps
+    prescribed_sets = max(1, int(target_sets or 1))
+    current_set = max(1, int(set_number or 1))
+
+    recent_rows: list[WorkoutSetLog] = []
+    if prescribed_sets > 1:
+        recent_rows = (
+            db.query(WorkoutSetLog)
+            .filter(
+                WorkoutSetLog.user_id == user_id,
+                WorkoutSetLog.exercise_name == exercise_name,
+                WorkoutSetLog.created_at >= utcnow() - timedelta(hours=12),
+            )
+            .order_by(WorkoutSetLog.created_at.desc(), WorkoutSetLog.id.desc())
+            .limit(max(0, prescribed_sets - 1))
+            .all()
+        )
+        recent_rows.reverse()
+
+    reps_session = [row.reps for row in recent_rows] + [reps]
+    rir_session = [row.rir for row in recent_rows] + [rir]
+    if len(reps_session) > prescribed_sets:
+        reps_session = reps_session[-prescribed_sets:]
+        rir_session = rir_session[-prescribed_sets:]
+
+    if reps < min_reps:
+        return (
+            f"Quedaste por debajo del rango {min_reps}-{max_reps}: conserva o reduce 5-10% la carga "
+            "hasta recuperar técnica, recorrido y repeticiones objetivo."
+        )
+
+    # Antes de la última serie no propone subir carga: primero completa el
+    # volumen prescrito para evitar decisiones basadas en una única serie.
+    if prescribed_sets > 1 and current_set < prescribed_sets:
+        if reps >= max_reps:
+            return (
+                f"Serie dentro del techo ({max_reps} reps). Mantén {weight_kg:g} kg y completa las "
+                "series restantes antes de decidir una subida de carga."
+            )
+        return f"Mantén {weight_kg:g} kg y busca acumular repeticiones dentro de {min_reps}-{max_reps} con el RIR prescrito."
+
+    enough_sets = len(reps_session) >= prescribed_sets
+    all_at_top = enough_sets and all(value >= max_reps for value in reps_session[-prescribed_sets:])
+    if target_rir is None:
+        rir_ok = all(value is None or value >= 1 for value in rir_session[-prescribed_sets:])
+    else:
+        rir_ok = all(value is None or value >= target_rir for value in rir_session[-prescribed_sets:])
+
+    if all_at_top and rir_ok:
+        increment = max(0.5, round((weight_kg * 0.025) * 2) / 2)
+        next_weight = round(weight_kg + increment, 1)
+        return (
+            f"Progresión lista: completaste {prescribed_sets} series en el techo del rango {min_reps}-{max_reps} "
+            f"sin exceder el esfuerzo objetivo. Próxima sesión prueba ~{next_weight:g} kg (+{increment:g} kg) "
+            "y vuelve a construir repeticiones desde la parte baja del rango."
+        )
+
+    if all_at_top and not rir_ok:
+        return (
+            "Completaste el techo de repeticiones, pero con menos RIR del prescrito. Mantén la carga hasta "
+            "repetir el rendimiento con mejor reserva y técnica antes de aumentarla."
+        )
+
+    if any(value < min_reps for value in reps_session[-prescribed_sets:]):
+        return (
+            f"Alguna serie cayó por debajo de {min_reps} reps. Mantén o reduce ligeramente la carga y prioriza "
+            "completar todas las series dentro del rango antes de progresar."
+        )
+
+    return (
+        f"Mantén {weight_kg:g} kg. Próximo objetivo: sumar 1-2 repeticiones totales entre las series hasta "
+        f"alcanzar {max_reps} reps en todas con el RIR previsto."
     )
-    next_weight_small = round(weight_kg + 2.5, 1)
-    next_weight_big = round(weight_kg * 1.05, 1)
-    if reps >= 15 and (rir is None or rir >= 1):
-        return f"Excelente control: aumenta a {next_weight_big} kg en el próximo entrenamiento o sube 2.5 kg en la siguiente serie si mantienes técnica limpia."
-    if reps >= 12 and (rir is None or rir >= 2):
-        return f"Estás por encima del rango objetivo: prueba {next_weight_small} kg en la siguiente serie y busca 8-12 reps con buena técnica."
-    if 8 <= reps < 12:
-        if previous and weight_kg > previous.weight_kg and reps >= previous.reps:
-            return "Progreso positivo: mantén este peso hasta lograr 12 reps sólidas antes de subir carga."
-        return "Mantén el peso actual y busca sumar 1-2 reps antes de aumentar carga."
-    if reps < 8:
-        return "Carga alta para el rango actual: conserva o baja 5-10% el peso para priorizar técnica y volumen efectivo."
-    return "Registro guardado. Mantén técnica limpia y progresa gradualmente."
 
 
 def _clean_measurement_date(value: datetime | None) -> datetime:
@@ -348,7 +424,19 @@ def create_workout_set(
     current_user: User = Depends(get_current_user),
 ):
     user_id = _target_user_id(payload.user_id, current_user, db)
-    suggestion = _calculate_progression_suggestion(payload.exercise_name, payload.weight_kg, payload.reps, payload.rir, db, user_id)
+    suggestion = _calculate_progression_suggestion(
+        payload.exercise_name,
+        payload.weight_kg,
+        payload.reps,
+        payload.rir,
+        db,
+        user_id,
+        set_number=payload.set_number,
+        target_min_reps=payload.target_min_reps,
+        target_max_reps=payload.target_max_reps,
+        target_sets=payload.target_sets,
+        target_rir=payload.target_rir,
+    )
     log = WorkoutSetLog(
         user_id=user_id,
         exercise_name=payload.exercise_name,

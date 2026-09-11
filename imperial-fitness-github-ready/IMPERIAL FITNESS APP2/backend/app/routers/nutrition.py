@@ -1,4 +1,6 @@
 import json
+import re
+import unicodedata
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import func
@@ -15,6 +17,93 @@ from app.core.time import utcnow
 
 
 router = APIRouter(prefix="/nutrition", tags=["nutrition"])
+
+
+def _normalize_food_text(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value or "")
+    return "".join(char for char in normalized if not unicodedata.combining(char)).lower()
+
+
+def _nutrition_safety_fields(client: User) -> dict[str, str]:
+    return {
+        "allergies": (client.food_allergies or "").strip(),
+        "intolerances": (client.food_intolerances or "").strip(),
+        "excluded_foods": (client.excluded_foods or "").strip(),
+        "medical_conditions": (client.medical_conditions or "").strip(),
+        "medications": (client.medications or "").strip(),
+    }
+
+
+def _nutrition_review_required(client: User) -> bool:
+    fields = _nutrition_safety_fields(client)
+    return any(fields.values()) or bool(client.eating_pattern and client.eating_pattern != "omnivore")
+
+
+def _split_terms(value: str) -> list[str]:
+    return [term.strip() for term in re.split(r"[,;\n]+", value or "") if len(term.strip()) >= 2]
+
+
+def _diet_safety_conflicts(client: User, meals_json: str) -> list[str]:
+    normalized_meals = _normalize_food_text(meals_json)
+    conflicts: list[str] = []
+    direct_terms = []
+    direct_terms.extend(_split_terms(client.food_allergies or ""))
+    direct_terms.extend(_split_terms(client.food_intolerances or ""))
+    direct_terms.extend(_split_terms(client.excluded_foods or ""))
+    allergen_aliases = {
+        "lactosa": ["leche", "queso", "yogur", "yogurt", "whey", "suero de leche"],
+        "leche": ["leche", "queso", "yogur", "yogurt", "whey", "suero de leche"],
+        "marisco": ["camaron", "langostino", "cangrejo", "langosta", "marisco"],
+        "crustace": ["camaron", "langostino", "cangrejo", "langosta"],
+        "pescado": ["atun", "salmon", "pescado", "tilapia", "merluza"],
+        "gluten": ["trigo", "pan", "pasta", "harina", "cebada", "centeno"],
+        "trigo": ["trigo", "pan", "pasta", "harina"],
+        "mani": ["mani", "cacahuate", "peanut"],
+        "cacahuate": ["mani", "cacahuate", "peanut"],
+        "frutos secos": ["almendra", "nuez", "pistacho", "avellana", "anacardo", "castana"],
+        "nuez": ["nuez", "almendra", "pistacho", "avellana", "anacardo"],
+        "soja": ["soja", "soya", "tofu", "tempeh"],
+        "soya": ["soja", "soya", "tofu", "tempeh"],
+        "huevo": ["huevo", "clara", "yema"],
+    }
+    for term in direct_terms:
+        normalized_term = _normalize_food_text(term)
+        if normalized_term in normalized_meals:
+            conflicts.append(term)
+            continue
+        for key, aliases in allergen_aliases.items():
+            if key in normalized_term and any(alias in normalized_meals for alias in aliases):
+                conflicts.append(term)
+                break
+
+    pattern = (client.eating_pattern or "").lower()
+    forbidden_by_pattern = {
+        "vegan": ["pollo", "pavo", "res", "carne", "cerdo", "atun", "salmon", "pescado", "camaron", "huevo", "leche", "queso", "yogur", "yogurt", "whey"],
+        "vegetarian": ["pollo", "pavo", "res", "carne", "cerdo", "atun", "salmon", "pescado", "camaron"],
+        "pescatarian": ["pollo", "pavo", "res", "carne", "cerdo"],
+    }
+    for term in forbidden_by_pattern.get(pattern, []):
+        if term in normalized_meals:
+            conflicts.append(f"{term} (incompatible con patrón {pattern})")
+
+    return list(dict.fromkeys(conflicts))[:8]
+
+
+def _assert_nutrition_safety_review(client: User, meals_json: str) -> None:
+    if _nutrition_review_required(client) and not client.nutrition_reviewed_at:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "El cliente tiene alergias, intolerancias, exclusiones, patrón alimentario o antecedentes relevantes. "
+                "El profesional responsable debe revisar y aprobar la ficha de seguridad antes de publicar."
+            ),
+        )
+    conflicts = _diet_safety_conflicts(client, meals_json)
+    if conflicts:
+        raise HTTPException(
+            status_code=422,
+            detail="El menú contiene elementos incompatibles con la ficha alimentaria: " + ", ".join(conflicts),
+        )
 
 
 SCIENCE_GUIDELINES = {
@@ -129,6 +218,16 @@ def preview_nutrition_targets(
     except NutritionInputError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     targets["based_on_metric_id"] = metric.id if metric else None
+    if _nutrition_review_required(client):
+        safety = _nutrition_safety_fields(client)
+        if not client.nutrition_reviewed_at:
+            targets["warnings"].append("Ficha alimentaria pendiente de revisión profesional antes de publicar un plan.")
+        if safety["allergies"]:
+            targets["warnings"].append("Alergias registradas: verifica ingredientes y contaminación cruzada.")
+        if safety["intolerances"]:
+            targets["warnings"].append("Intolerancias registradas: valida sustituciones antes de publicar.")
+        if client.eating_pattern and client.eating_pattern != "omnivore":
+            targets["warnings"].append(f"Patrón alimentario declarado: {client.eating_pattern}.")
     return targets
 
 
@@ -397,21 +496,46 @@ def update_my_diet_plan_meals(
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    plan.meals_json = payload.meals_json
+    # Un plan publicado es inmutable. Una sustitución solicitada por el cliente
+    # se conserva como nueva variante/borrador para revisión del coach, en vez de
+    # alterar silenciosamente la prescripción publicada.
+    latest_version = db.query(func.max(DietPlan.version)).filter(
+        DietPlan.client_id == current_user.id
+    ).scalar() or plan.version or 1
+    variant = DietPlan(
+        client_id=plan.client_id,
+        title=f"{plan.title} · Variante cliente",
+        calories=plan.calories,
+        protein=plan.protein,
+        carbs=plan.carbs,
+        fat=plan.fat,
+        meals_json=payload.meals_json,
+        notes=(plan.notes or "").rstrip() + "\nVariante solicitada por el cliente; requiere revisión profesional antes de publicarse.",
+        active=0,
+        status="draft",
+        version=int(latest_version) + 1,
+        calculation_json=plan.calculation_json,
+        based_on_metric_id=plan.based_on_metric_id,
+        approved_by=None,
+        published_at=None,
+        supersedes_plan_id=plan.id,
+    )
+    db.add(variant)
+    db.flush()
     db.add(SyncEvent(
-        title="Sustitución nutricional del cliente",
-        detail=f"{current_user.name} guardó una sustitución equivalente dentro de su plan activo.",
+        title="Variante nutricional solicitada",
+        detail=f"{current_user.name} propuso una sustitución. Se creó la versión {variant.version} en borrador para revisión del coach; el plan publicado no cambió.",
         source="App Cliente",
-        target="Plan Nutricional",
-        event_type="plan",
+        target="Panel Coach",
+        event_type="plan_variant",
         actor_user_id=current_user.id,
         target_user_id=current_user.id,
     ))
     db.commit()
-    db.refresh(plan)
+    db.refresh(variant)
     cache.delete_prefix("stats:")
     cache.delete_prefix("sync:")
-    return plan
+    return variant
 
 
 @router.post("/diet-plans", response_model=DietPlanOut)
@@ -428,6 +552,18 @@ def create_diet_plan(
     _validate_based_on_metric(db, client.id, payload.based_on_metric_id)
     if payload.status == "published":
         _validate_calculation_metadata(payload.calculation_json, payload.calories)
+        _assert_nutrition_safety_review(client, payload.meals_json)
+        try:
+            validate_meals_nutrition_alignment(
+                payload.meals_json,
+                target_calories=payload.calories,
+                target_protein=payload.protein,
+                target_carbs=payload.carbs,
+                target_fat=payload.fat,
+                require_full_day=True,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     latest_version = db.query(func.max(DietPlan.version)).filter(DietPlan.client_id == client.id).scalar() or 0
     plan_data = payload.model_dump()
@@ -499,6 +635,34 @@ def _get_manageable_plan(
     return plan, client
 
 
+@router.post("/clients/{client_id}/safety-review")
+def approve_client_nutrition_safety(
+    client_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_or_trainer),
+):
+    client = _assert_target_access(db, current_user, client_id)
+    client.nutrition_reviewed_at = utcnow()
+    client.nutrition_reviewed_by = current_user.id
+    db.add(SyncEvent(
+        title="Ficha nutricional revisada",
+        detail=f"{current_user.name} confirmó la revisión de alergias, preferencias y antecedentes de {client.name}.",
+        source="Panel Coach",
+        target="Nutrición",
+        event_type="nutrition_review",
+        actor_user_id=current_user.id,
+        target_user_id=client.id,
+    ))
+    db.commit()
+    return {
+        "ok": True,
+        "client_id": client.id,
+        "reviewed_at": client.nutrition_reviewed_at,
+        "reviewed_by": current_user.id,
+        "review_required": _nutrition_review_required(client),
+    }
+
+
 @router.get("/diet-plans/drafts", response_model=list[DietPlanOut])
 def list_diet_drafts(
     client_id: int,
@@ -524,6 +688,7 @@ def publish_diet_plan(
     db.query(User).filter(User.id == client.id).with_for_update().one()
     _validate_based_on_metric(db, client.id, plan.based_on_metric_id)
     _validate_calculation_metadata(plan.calculation_json, plan.calories)
+    _assert_nutrition_safety_review(client, plan.meals_json)
     try:
         validate_meals_nutrition_alignment(
             plan.meals_json,
@@ -535,7 +700,7 @@ def publish_diet_plan(
         )
     except ValueError as initial_exc:
         try:
-            balanced_json, _balanced_totals, _changed_items = rebalance_meals_to_targets(
+            balanced_json, _balanced_totals, changed_items = rebalance_meals_to_targets(
                 plan.meals_json,
                 target_calories=plan.calories,
                 target_protein=plan.protein,

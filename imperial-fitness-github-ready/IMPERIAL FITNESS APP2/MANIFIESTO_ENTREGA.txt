@@ -1,0 +1,6 @@
+IMPERIAL FITNESS v1.21.0 SIMPLE - ENTREGA
+Generado: 2026-09-11T17:42:00
+
+Incluye frontend, backend, migraciones Supabase, generador PDF y documentación de actualización.
+No incluye node_modules, dist, entornos virtuales ni archivos .env privados.
+Ejecutar PASOS_ACTUALIZACION_v1.21.0.md antes de producción.

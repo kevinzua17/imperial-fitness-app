@@ -22,12 +22,6 @@ function parseDietNotes(notes: string): { diagnosis: string; publishedAt?: strin
   };
 }
 
-function serializeDietNotes(plan: Partial<DietPlan>): string {
-  const diagnosis = (plan.specialistDiagnosis || '').replace(DIET_PUBLICATION_MARKER, '').trim();
-  if (!plan.publishedAt) return diagnosis;
-  const marker = `[[IMPERIAL_PUBLICATION|${encodeURIComponent(plan.publishedAt)}|${encodeURIComponent(plan.publishedBy || '')}]]`;
-  return `${diagnosis}\n${marker}`.trim();
-}
 
 
 export interface EquivalenceApiResult {
@@ -85,7 +79,7 @@ export async function getScienceGuidelinesFromApi(): Promise<{ nutrition: Record
   return apiRequest('/nutrition/science-guidelines');
 }
 
-export interface NutritionTargetApi {
+export interface NutritionTargetApi extends Record<string, unknown> {
   bmr: number;
   bmr_source: 'inbody' | 'mifflin_st_jeor' | 'recorded_bmr';
   activity_level: 'sedentary' | 'light' | 'moderate' | 'very_active' | 'athlete';
@@ -215,7 +209,10 @@ export async function listDietDraftsFromApi(clientId: string): Promise<DietPlan[
   return plans.map(apiDietToDietPlan);
 }
 
-export async function createDietPlanInApi(plan: DietPlan, status: 'draft' | 'published' = plan.status || 'draft'): Promise<DietPlan> {
+export async function createDietPlanInApi(
+  plan: DietPlan,
+  status: 'draft' | 'published' = plan.status === 'published' ? 'published' : 'draft',
+): Promise<DietPlan> {
   const created = await apiRequest<ApiDietPlan>('/nutrition/diet-plans', {
     method: 'POST',
     body: JSON.stringify({
@@ -276,4 +273,8 @@ export async function deleteDietPlanInApi(planId: string): Promise<void> {
   await apiRequest<{ ok: boolean }>(`/nutrition/diet-plans/${encodeURIComponent(planId)}`, {
     method: 'DELETE',
   });
+}
+
+export async function approveNutritionSafetyReviewFromApi(clientId: string): Promise<{ ok: boolean; reviewed_at?: string | null }> {
+  return apiRequest(`/nutrition/clients/${encodeURIComponent(clientId)}/safety-review`, { method: 'POST' });
 }

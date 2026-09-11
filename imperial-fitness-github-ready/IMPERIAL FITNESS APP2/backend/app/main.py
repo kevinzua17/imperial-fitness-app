@@ -24,11 +24,11 @@ from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.middleware.strict_origin import StrictOriginMiddleware
 from app.middleware.membership_access import MembershipAccessMiddleware
-from app.routers import auth, challenges, chat, checkins, community, exercises, finance, gamification, history, limitations, maintenance, media, memberships, nutrition, progress, recovery, retention, rewards, routines, specialist, stats, sync, users
+from app.routers import auth, challenges, chat, checkins, community, exercises, finance, gamification, history, limitations, maintenance, media, memberships, nutrition, progress, recovery, reports, retention, rewards, routines, specialist, stats, sync, users
 
 
 settings = get_settings()
-APP_VERSION = "1.20.5"
+APP_VERSION = "1.21.0"
 configure_logging()
 upload_root = Path(settings.upload_dir)
 private_upload_root = Path(settings.private_upload_dir)
@@ -292,6 +292,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(nutrition.router)
 app.include_router(routines.router)
+app.include_router(reports.router)
 app.include_router(progress.router)
 app.include_router(sync.router)
 app.include_router(specialist.router)

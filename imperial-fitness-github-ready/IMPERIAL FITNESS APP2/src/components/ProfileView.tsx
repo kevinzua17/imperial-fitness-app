@@ -23,10 +23,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onAvatarU
   const [height, setHeight] = useState(currentUser.height ? String(currentUser.height) : '');
   const [age, setAge] = useState(currentUser.age ? String(currentUser.age) : '');
   const [gender, setGender] = useState<'M' | 'F' | ''>(currentUser.gender || '');
-  const [activityLevel, setActivityLevel] = useState(currentUser.activityLevel || '');
+  const [activityLevel, setActivityLevel] = useState<NonNullable<ClientProfile['activityLevel']> | ''>(currentUser.activityLevel || '');
   const [workoutsPerWeek, setWorkoutsPerWeek] = useState(currentUser.workoutsPerWeek !== undefined ? String(currentUser.workoutsPerWeek) : '');
   const [averageDailySteps, setAverageDailySteps] = useState(currentUser.averageDailySteps !== undefined ? String(currentUser.averageDailySteps) : '');
   const [occupationActivity, setOccupationActivity] = useState<ClientProfile['occupationActivity'] | ''>(currentUser.occupationActivity || '');
+  const [eatingPattern, setEatingPattern] = useState<ClientProfile['eatingPattern'] | ''>(currentUser.eatingPattern || '');
+  const [dietaryPreferences, setDietaryPreferences] = useState(currentUser.dietaryPreferences || '');
+  const [excludedFoods, setExcludedFoods] = useState(currentUser.excludedFoods || '');
+  const [foodAllergies, setFoodAllergies] = useState(currentUser.foodAllergies || '');
+  const [foodIntolerances, setFoodIntolerances] = useState(currentUser.foodIntolerances || '');
+  const [medicalConditions, setMedicalConditions] = useState(currentUser.medicalConditions || '');
+  const [medications, setMedications] = useState(currentUser.medications || '');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
@@ -42,6 +49,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onAvatarU
     setWorkoutsPerWeek(currentUser.workoutsPerWeek !== undefined ? String(currentUser.workoutsPerWeek) : '');
     setAverageDailySteps(currentUser.averageDailySteps !== undefined ? String(currentUser.averageDailySteps) : '');
     setOccupationActivity(currentUser.occupationActivity || '');
+    setEatingPattern(currentUser.eatingPattern || '');
+    setDietaryPreferences(currentUser.dietaryPreferences || '');
+    setExcludedFoods(currentUser.excludedFoods || '');
+    setFoodAllergies(currentUser.foodAllergies || '');
+    setFoodIntolerances(currentUser.foodIntolerances || '');
+    setMedicalConditions(currentUser.medicalConditions || '');
+    setMedications(currentUser.medications || '');
   }, [currentUser]);
 
   const handleFile = async (file?: File) => {
@@ -81,6 +95,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onAvatarU
         workouts_per_week: workoutsPerWeek ? Number(workoutsPerWeek) : undefined,
         average_daily_steps: averageDailySteps ? Number(averageDailySteps) : undefined,
         occupation_activity: occupationActivity || undefined,
+        eating_pattern: eatingPattern || undefined,
+        dietary_preferences: dietaryPreferences,
+        excluded_foods: excludedFoods,
+        food_allergies: foodAllergies,
+        food_intolerances: foodIntolerances,
+        medical_conditions: medicalConditions,
+        medications,
       });
       onProfileUpdated?.(updated);
       setMsg('Perfil actualizado correctamente.');
@@ -153,12 +174,34 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onAvatarU
                 <div><label className="text-[10px] text-neutral-400 uppercase block mb-1">Sexo fórmula</label><select value={gender} onChange={e => setGender(e.target.value as 'M' | 'F' | '')} className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-white"><option value="">Seleccionar</option><option value="M">Masculino</option><option value="F">Femenino</option></select></div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div><label className="text-[10px] text-neutral-400 uppercase block mb-1">Actividad</label><select value={activityLevel} onChange={e => setActivityLevel(e.target.value as ClientProfile['activityLevel'])} className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-white"><option value="">Seleccionar</option><option>Sedentario</option><option>Ligero</option><option>Moderado</option><option>Intenso</option><option>Atleta</option></select></div>
+                <div><label className="text-[10px] text-neutral-400 uppercase block mb-1">Actividad</label><select value={activityLevel} onChange={e => setActivityLevel(e.target.value as NonNullable<ClientProfile['activityLevel']> | '')} className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-white"><option value="">Seleccionar</option><option>Sedentario</option><option>Ligero</option><option>Moderado</option><option>Intenso</option><option>Atleta</option></select></div>
                 <div><label className="text-[10px] text-neutral-400 uppercase block mb-1">Entrenos/semana</label><input type="number" min="0" max="14" value={workoutsPerWeek} onChange={e => setWorkoutsPerWeek(e.target.value)} className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-white" /></div>
                 <div><label className="text-[10px] text-neutral-400 uppercase block mb-1">Pasos/día</label><input type="number" min="0" max="100000" step="500" value={averageDailySteps} onChange={e => setAverageDailySteps(e.target.value)} className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-white" /></div>
                 <div><label className="text-[10px] text-neutral-400 uppercase block mb-1">Trabajo diario</label><select value={occupationActivity} onChange={e => setOccupationActivity(e.target.value as typeof occupationActivity)} className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-white"><option value="">Seleccionar</option><option value="sedentary">Sentado</option><option value="light">Algo activo</option><option value="active">Activo</option><option value="physical">Trabajo físico</option></select></div>
               </div>
             </div>
+            {currentUser.role === 'client' && (
+              <div className="rounded-xl border border-amber-900/45 bg-amber-950/10 p-4 space-y-3">
+                <div>
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">Seguridad y preferencias alimentarias</span>
+                  <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">Estos datos se usan para revisión humana antes de publicar planes. Si cambias alergias, intolerancias, condiciones o medicamentos, la aprobación nutricional anterior se invalida automáticamente.</p>
+                  {(foodAllergies || foodIntolerances || medicalConditions || medications) && (
+                    <p className={`mt-2 text-[10px] font-bold ${currentUser.nutritionReviewedAt ? 'text-emerald-300' : 'text-amber-300'}`}>
+                      {currentUser.nutritionReviewedAt ? `Revisión del coach registrada: ${new Date(currentUser.nutritionReviewedAt).toLocaleDateString('es-CO')}` : 'Revisión profesional pendiente antes de publicar un nuevo plan.'}
+                    </p>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div><label className="text-[10px] text-neutral-400 uppercase block mb-1">Patrón alimentario</label><select value={eatingPattern} onChange={e => setEatingPattern(e.target.value as ClientProfile['eatingPattern'] | '')} className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-white"><option value="">Seleccionar</option><option value="omnivore">Omnívoro</option><option value="flexitarian">Flexitariano</option><option value="pescatarian">Pescetariano</option><option value="vegetarian">Vegetariano</option><option value="vegan">Vegano</option></select></div>
+                  <div><label className="text-[10px] text-neutral-400 uppercase block mb-1">Preferencias</label><input value={dietaryPreferences} onChange={e => setDietaryPreferences(e.target.value)} placeholder="Ej: comidas simples, cocina colombiana" className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-white" /></div>
+                  <div><label className="text-[10px] text-neutral-400 uppercase block mb-1">Alimentos que no consumes</label><input value={excludedFoods} onChange={e => setExcludedFoods(e.target.value)} placeholder="Ej: hígado, atún" className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-white" /></div>
+                  <div><label className="text-[10px] text-neutral-400 uppercase block mb-1">Alergias</label><input value={foodAllergies} onChange={e => setFoodAllergies(e.target.value)} placeholder="Ej: maní, camarón" className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-white" /></div>
+                  <div><label className="text-[10px] text-neutral-400 uppercase block mb-1">Intolerancias</label><input value={foodIntolerances} onChange={e => setFoodIntolerances(e.target.value)} placeholder="Ej: lactosa" className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-white" /></div>
+                  <div><label className="text-[10px] text-neutral-400 uppercase block mb-1">Condición médica relevante</label><input value={medicalConditions} onChange={e => setMedicalConditions(e.target.value)} placeholder="Solo lo relevante para nutrición/ejercicio" className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-white" /></div>
+                  <div className="md:col-span-2"><label className="text-[10px] text-neutral-400 uppercase block mb-1">Medicamentos relevantes</label><input value={medications} onChange={e => setMedications(e.target.value)} placeholder="Registra solo medicamentos que el equipo deba considerar" className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-white" /></div>
+                </div>
+              </div>
+            )}
             <div><label className="text-[10px] text-neutral-400 uppercase block mb-1">Objetivo</label><select value={goal} onChange={e => setGoal(e.target.value)} className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-xs text-white"><option value="">Seleccionar objetivo</option><option value="Pérdida de grasa">Pérdida de grasa</option><option value="Mantenimiento">Mantenimiento</option><option value="Recomposición corporal">Recomposición corporal</option><option value="Ganancia muscular">Ganancia muscular</option><option value="Fuerza">Fuerza</option></select></div>
             <button className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-4 py-2 rounded-lg">Guardar perfil</button>
           </form>

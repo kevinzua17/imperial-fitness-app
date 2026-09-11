@@ -24,6 +24,15 @@ export interface ApiUser {
   workouts_per_week?: number | null;
   average_daily_steps?: number | null;
   occupation_activity?: 'sedentary' | 'light' | 'active' | 'physical' | null;
+  eating_pattern?: 'omnivore' | 'flexitarian' | 'pescatarian' | 'vegetarian' | 'vegan' | null;
+  dietary_preferences?: string | null;
+  excluded_foods?: string | null;
+  food_allergies?: string | null;
+  food_intolerances?: string | null;
+  medical_conditions?: string | null;
+  medications?: string | null;
+  nutrition_reviewed_at?: string | null;
+  nutrition_reviewed_by?: number | null;
   pending_at?: string | null;
   activated_at?: string | null;
   suspended_at?: string | null;
@@ -97,6 +106,15 @@ export function apiUserToClientProfile(user: ApiUser): ClientProfile {
     workoutsPerWeek: user.workouts_per_week ?? undefined,
     averageDailySteps: user.average_daily_steps ?? undefined,
     occupationActivity: user.occupation_activity || undefined,
+    eatingPattern: user.eating_pattern || undefined,
+    dietaryPreferences: user.dietary_preferences || undefined,
+    excludedFoods: user.excluded_foods || undefined,
+    foodAllergies: user.food_allergies || undefined,
+    foodIntolerances: user.food_intolerances || undefined,
+    medicalConditions: user.medical_conditions || undefined,
+    medications: user.medications || undefined,
+    nutritionReviewedAt: user.nutrition_reviewed_at || undefined,
+    nutritionReviewedBy: user.nutrition_reviewed_by ? String(user.nutrition_reviewed_by) : undefined,
 
     muscleMass: user.muscle_mass ?? undefined,
     waterPercent: undefined,

@@ -4,7 +4,6 @@ import {
   TrendingUp, 
   Users, 
   Coins, 
-  Award, 
   AlertTriangle, 
   CheckCircle2, 
   Activity, 
@@ -48,10 +47,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const myRoutine = routines.find(r => r.clientId === currentUser.id);
   const myDiet = diets.find(d => d.clientId === currentUser.id);
   const firstRoutineDay = myRoutine?.days?.[0];
-  const clientHeightMeters = currentUser.height ? currentUser.height / 100 : 0;
-  const clientBmi = currentUser.weight && clientHeightMeters > 0
-    ? Math.round((currentUser.weight / (clientHeightMeters * clientHeightMeters)) * 10) / 10
-    : 0;
   const clientsWithoutRoutine = activeClients.filter(client => !routines.some(routine => routine.clientId === client.id)).length;
   const clientsWithoutDiet = activeClients.filter(client => !diets.some(diet => diet.clientId === client.id)).length;
   const clientsMissingBodyData = activeClients.filter(client => !client.height || !client.weight || !client.age || !client.gender).length;
@@ -103,13 +98,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     let mounted = true;
     let timer: number | undefined;
 
-    getStatsSummaryFromApi()
-      .then(value => {
-        if (mounted) setStats(value);
-      })
-      .catch(() => {
-        if (mounted) setStats(null);
-      });
+    if (currentUser.role !== 'client') {
+      getStatsSummaryFromApi()
+        .then(value => {
+          if (mounted) setStats(value);
+        })
+        .catch(() => {
+          if (mounted) setStats(null);
+        });
+    }
 
     // Las cargas menos urgentes se hacen después del primer render para que el usuario entre antes.
     timer = window.setTimeout(() => {
@@ -196,6 +193,90 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }
   };
 
+  if (currentUser.role === 'client') {
+    const completedProfile = [currentUser.weight, currentUser.height, currentUser.age, currentUser.gender].filter(Boolean).length;
+    const profilePercent = Math.round((completedProfile / 4) * 100);
+    return (
+      <div className="mx-auto max-w-5xl space-y-4 px-4 py-6 animate-fade-in">
+        <section className="relative overflow-hidden rounded-3xl border border-red-900/40 bg-gradient-to-br from-neutral-950 via-neutral-950 to-red-950/25 p-5 sm:p-6">
+          <div className="absolute -right-14 -top-14 h-40 w-40 rounded-full bg-red-600/10 blur-3xl" />
+          <div className="relative">
+            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-red-400">Hoy</span>
+            <h1 className="mt-1 text-2xl font-black text-white sm:text-3xl">Hola, {currentUser.name.split(' ')[0]}</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-400">
+              Imperial te muestra solo lo que necesitas ahora: entrenar, cumplir tu alimentación y registrar el progreso.
+            </p>
+          </div>
+        </section>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <section className="rounded-3xl border border-neutral-800 bg-neutral-950 p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="rounded-2xl bg-red-600/15 p-3 text-red-400"><Dumbbell className="h-5 w-5" /></span>
+                <div>
+                  <span className="text-[9px] font-black uppercase tracking-[0.18em] text-neutral-500">Siguiente entrenamiento</span>
+                  <h2 className="mt-1 text-lg font-black text-white">{firstRoutineDay?.focus || 'Pendiente de publicar'}</h2>
+                </div>
+              </div>
+              {firstRoutineDay && <span className="rounded-full bg-neutral-900 px-2.5 py-1 text-[10px] font-black text-neutral-300">{firstRoutineDay.exercises.length} ejercicios</span>}
+            </div>
+            <p className="mt-4 text-sm leading-relaxed text-neutral-400">
+              {firstRoutineDay ? `${firstRoutineDay.day}. Series, repeticiones, imágenes, RIR y descansos están listos en tu plan.` : 'Tu coach todavía no ha publicado una rutina activa.'}
+            </p>
+            <button type="button" onClick={() => onNavigateTab('personal_plan')} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-xs font-black text-white transition hover:bg-red-500">
+              {firstRoutineDay ? 'VER / INICIAR ENTRENAMIENTO' : 'VER MI PLAN'} <ArrowRight className="h-4 w-4" />
+            </button>
+          </section>
+
+          <section className="rounded-3xl border border-neutral-800 bg-neutral-950 p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="rounded-2xl bg-emerald-600/15 p-3 text-emerald-400"><Utensils className="h-5 w-5" /></span>
+                <div>
+                  <span className="text-[9px] font-black uppercase tracking-[0.18em] text-neutral-500">Alimentación de hoy</span>
+                  <h2 className="mt-1 text-lg font-black text-white">{myDiet ? `${myDiet.baseCalories} kcal` : 'Pendiente de publicar'}</h2>
+                </div>
+              </div>
+              {myDiet && <span className="rounded-full bg-emerald-950/50 px-2.5 py-1 text-[10px] font-black text-emerald-300">v{myDiet.version || 1}</span>}
+            </div>
+            {myDiet ? (
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-black/35 p-2.5 text-center"><span className="block text-[9px] text-neutral-500">Proteína</span><b className="text-sm text-white">{myDiet.protein} g</b></div>
+                <div className="rounded-xl bg-black/35 p-2.5 text-center"><span className="block text-[9px] text-neutral-500">Carbos</span><b className="text-sm text-white">{myDiet.carbs} g</b></div>
+                <div className="rounded-xl bg-black/35 p-2.5 text-center"><span className="block text-[9px] text-neutral-500">Grasas</span><b className="text-sm text-white">{myDiet.fat} g</b></div>
+              </div>
+            ) : <p className="mt-4 text-sm text-neutral-400">Tu pauta aparecerá aquí cuando sea revisada y publicada.</p>}
+            <button type="button" onClick={() => onNavigateTab('personal_plan')} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-800/60 bg-emerald-950/25 px-4 py-3 text-xs font-black text-emerald-200 transition hover:bg-emerald-950/45">
+              VER ALIMENTACIÓN <ArrowRight className="h-4 w-4" />
+            </button>
+          </section>
+        </div>
+
+        <section className="grid gap-3 sm:grid-cols-3">
+          <button type="button" onClick={() => onNavigateTab('progress_hub')} className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4 text-left transition hover:border-emerald-800/60">
+            <Activity className="h-5 w-5 text-emerald-400" />
+            <span className="mt-3 block text-[9px] font-black uppercase text-neutral-500">Progreso</span>
+            <strong className="mt-1 block text-sm text-white">{currentUser.weight ? `${currentUser.weight} kg` : 'Registrar medidas'}</strong>
+            <span className="mt-1 block text-[10px] text-neutral-500">{currentUser.bodyFat ? `${currentUser.bodyFat}% grasa corporal` : 'Medidas, fotos e historial'}</span>
+          </button>
+          <button type="button" onClick={() => onNavigateTab('coach_hub')} className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4 text-left transition hover:border-sky-800/60">
+            <Sparkles className="h-5 w-5 text-sky-400" />
+            <span className="mt-3 block text-[9px] font-black uppercase text-neutral-500">Mi coach</span>
+            <strong className="mt-1 block text-sm text-white">Hablar o reportar molestia</strong>
+            <span className="mt-1 block text-[10px] text-neutral-500">Un solo punto de contacto</span>
+          </button>
+          <button type="button" onClick={() => onNavigateTab('profile')} className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4 text-left transition hover:border-red-800/60">
+            <CheckCircle2 className="h-5 w-5 text-red-400" />
+            <span className="mt-3 block text-[9px] font-black uppercase text-neutral-500">Ficha personal</span>
+            <strong className="mt-1 block text-sm text-white">{profilePercent}% completa</strong>
+            <span className="mt-1 block text-[10px] text-neutral-500">Perfil, seguridad alimentaria y pagos</span>
+          </button>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-8 animate-fade-in">
       
@@ -236,7 +317,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <p className="text-xs text-neutral-400 mt-1 max-w-xl font-light">
                 {currentUser.role === 'admin' && 'Monitorea las métricas del negocio, asignación de especialistas, retención activa y estado de los clientes.'}
                 {currentUser.role === 'trainer' && 'Supervisa el progreso de tus alumnos asignados y prescribe porciones y cargas precisas.'}
-                {currentUser.role === 'client' && `Nivel: ${currentUser.experienceLevel} | Plan: ${currentUser.plan} | Racha actual: ${currentUser.streak || 0} días consecutivos.`}
               </p>
             </div>
           </div>
@@ -251,14 +331,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </button>
             )}
 
-            {currentUser.role === 'client' && (
-              <button
-                onClick={() => onNavigateTab('personal_plan')}
-                className="bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow-md shadow-red-950/50 flex items-center gap-2"
-              >
-                <Sparkles className="w-4 h-4" /> Ver Plan Personalizado
-              </button>
-            )}
             {currentUser.role === 'admin' && (
               <button
                 onClick={() => onNavigateTab('finance')}
@@ -327,39 +399,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         )}
 
-        {/* Indicadores rápidos biométricos si es cliente */}
-        {currentUser.role === 'client' && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-neutral-800/80">
-            <div>
-              <span className="text-[10px] text-neutral-500 uppercase block font-medium">Grasa Corporal</span>
-              <span className="text-lg font-bold text-white">{currentUser.bodyFat ? `${currentUser.bodyFat}%` : 'Sin dato'}</span>
-              <div className="w-full bg-neutral-800 h-1 rounded-full mt-1">
-                <div className="bg-red-500 h-1 rounded-full" style={{ width: `${Math.min(100, currentUser.bodyFat || 0)}%` }} />
-              </div>
-            </div>
-            <div>
-              <span className="text-[10px] text-neutral-500 uppercase block font-medium">Masa Muscular</span>
-              <span className="text-lg font-bold text-white">{currentUser.muscleMass ? `${currentUser.muscleMass} kg` : 'Sin dato'}</span>
-              <div className="w-full bg-neutral-800 h-1 rounded-full mt-1">
-                <div className="bg-emerald-500 h-1 rounded-full" style={{ width: `${Math.min(100, currentUser.muscleMass || 0)}%` }} />
-              </div>
-            </div>
-            <div>
-              <span className="text-[10px] text-neutral-500 uppercase block font-medium">Agua Corporal</span>
-              <span className="text-lg font-bold text-white">{currentUser.waterPercent ? `${currentUser.waterPercent}%` : 'Sin dato'}</span>
-              <div className="w-full bg-neutral-800 h-1 rounded-full mt-1">
-                <div className="bg-sky-500 h-1 rounded-full" style={{ width: `${Math.min(100, currentUser.waterPercent || 0)}%` }} />
-              </div>
-            </div>
-            <div>
-              <span className="text-[10px] text-neutral-500 uppercase block font-medium">Asistencia Promedio</span>
-              <span className="text-lg font-bold text-white">{currentUser.attendanceRate}%</span>
-              <div className="w-full bg-neutral-800 h-1 rounded-full mt-1">
-                <div className={`h-1 rounded-full ${currentUser.attendanceRate > 80 ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${currentUser.attendanceRate}%` }} />
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
 
@@ -371,73 +410,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         onNavigateTab={onNavigateTab}
       />
 
-      {currentUser.role === 'client' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="rounded-3xl border border-red-900/50 bg-gradient-to-br from-red-950/40 via-neutral-950 to-neutral-950 p-5 shadow-xl">
-            <div className="flex items-center gap-2 mb-3">
-              <Dumbbell className="w-5 h-5 text-red-400" />
-              <span className="text-[11px] uppercase tracking-[0.18em] text-red-200 font-black">Entreno de hoy</span>
-            </div>
-            <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
-              {firstRoutineDay ? firstRoutineDay.focus : 'Rutina pendiente'}
-            </h3>
-            <p className="mt-2 text-sm text-neutral-300 leading-relaxed">
-              {firstRoutineDay
-                ? `${firstRoutineDay.exercises.length} ejercicios listos. Entra al plan para ver series, repeticiones, imágenes e indicaciones.`
-                : 'Aún no tienes rutina asignada. Solicita al entrenador tu plan de fuerza.'}
-            </p>
-            <button
-              onClick={() => onNavigateTab('personal_plan')}
-              className="mt-4 w-full rounded-2xl bg-red-600 hover:bg-red-500 px-4 py-3 text-sm font-black text-white"
-            >
-              Ver mi rutina
-            </button>
-          </div>
-
-          <div className="rounded-3xl border border-yellow-500/30 bg-gradient-to-br from-yellow-950/30 via-neutral-950 to-neutral-950 p-5 shadow-xl">
-            <div className="flex items-center gap-2 mb-3">
-              <Activity className="w-5 h-5 text-yellow-300" />
-              <span className="text-[11px] uppercase tracking-[0.18em] text-yellow-100 font-black">Timer imperial</span>
-            </div>
-            <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">Conteo fuerte 3, 2, 1</h3>
-            <p className="mt-2 text-sm text-neutral-300 leading-relaxed">
-              Usa el timer para distinguir claramente entreno y descanso con alerta sonora fuerte antes de cada cambio.
-            </p>
-            <button
-              onClick={() => onNavigateTab('timer')}
-              className="mt-4 w-full rounded-2xl bg-yellow-400 hover:bg-yellow-300 px-4 py-3 text-sm font-black text-black"
-            >
-              Abrir timer
-            </button>
-          </div>
-
-          <div className="rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/30 via-neutral-950 to-neutral-950 p-5 shadow-xl">
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="w-5 h-5 text-emerald-300" />
-              <span className="text-[11px] uppercase tracking-[0.18em] text-emerald-100 font-black">Medidas InBody</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-center">
-              <div className="rounded-2xl bg-neutral-900/80 border border-neutral-800 p-3">
-                <span className="block text-[10px] text-neutral-500 uppercase font-bold">Peso</span>
-                <strong className="text-xl text-white">{currentUser.weight || 0} kg</strong>
-              </div>
-              <div className="rounded-2xl bg-neutral-900/80 border border-neutral-800 p-3">
-                <span className="block text-[10px] text-neutral-500 uppercase font-bold">IMC</span>
-                <strong className="text-xl text-white">{clientBmi > 0 ? clientBmi : '—'}</strong>
-              </div>
-            </div>
-            <button
-              onClick={() => onNavigateTab('body_metrics')}
-              className="mt-4 w-full rounded-2xl bg-emerald-600 hover:bg-emerald-500 px-4 py-3 text-sm font-black text-white"
-            >
-              Actualizar medidas
-            </button>
-          </div>
-        </div>
-      )}
-
-      {currentUser.role !== 'client' && (
-        <div className="rounded-3xl border border-neutral-800 bg-neutral-950 p-4 sm:p-5 shadow-xl">
+      <div className="rounded-3xl border border-neutral-800 bg-neutral-950 p-4 sm:p-5 shadow-xl">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
             <div>
               <span className="text-[11px] uppercase tracking-[0.22em] text-red-400 font-black">Control general del gimnasio</span>
@@ -473,8 +446,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <button onClick={() => onNavigateTab('clients')} className="mt-2 text-xs text-amber-400 font-bold">Hacer seguimiento →</button>
             </div>
           </div>
-        </div>
-      )}
+      </div>
 
       {/* GUÍA EXPLICATIVA DE OPCIONES SOLICITADA POR EL USUARIO */}
       <div className="bg-neutral-950 p-4 rounded-xl border border-neutral-850 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
@@ -513,7 +485,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <Utensils className="w-4 h-4 text-emerald-500" />
               </div>
               <div className="text-2xl font-black text-white">{stats?.diet_plans_total ?? diets.length}</div>
-              <p className="text-[10px] text-neutral-500 mt-1">Supervisados por Nutricionistas</p>
+              <p className="text-[10px] text-neutral-500 mt-1">Con revisión profesional</p>
             </div>
 
             <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 hover:border-neutral-700 transition-all">
@@ -759,213 +731,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* --- SECCIÓN: VISTA DE CLIENTE --- */}
-      {currentUser.role === 'client' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Columna Izquierda: Plan Prescrito */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Pauta de Nutrición Premium */}
-            <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-5">
-              <div className="flex items-center justify-between mb-4 border-b border-neutral-900 pb-3">
-                <div className="flex items-center gap-2">
-                  <Utensils className="w-4 h-4 text-emerald-500" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-white">
-                    Pauta Nutricional del Especialista
-                  </h3>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-bold text-emerald-400 block font-mono">
-                    {myDiet ? `${myDiet.baseCalories} Kcal` : 'Sin asignar'}
-                  </span>
-                  <span className="text-[9px] text-neutral-500 block">Calorías calculadas en vivo</span>
-                </div>
-              </div>
-
-              {myDiet ? (
-                <div>
-                  <div className="flex gap-4 text-xs text-neutral-300 mb-4 bg-neutral-900/60 p-2.5 rounded-lg border border-neutral-800/50">
-                    <span>Proteína Pura: <strong className="text-white font-mono">{myDiet.protein}g</strong></span>
-                    <span>Carbohidratos: <strong className="text-white font-mono">{myDiet.carbs}g</strong></span>
-                    <span>Grasas: <strong className="text-white font-mono">{myDiet.fat}g</strong></span>
-                  </div>
-
-                  <div className="space-y-3">
-                    <span className="text-[10px] text-neutral-500 uppercase tracking-wider block font-bold">
-                      Vista Preliminar de Comidas (Con porciones en gramos):
-                    </span>
-                    
-                    {myDiet.meals.slice(0, 2).map((meal, mIdx) => (
-                      <div key={mIdx} className="bg-neutral-900/40 p-3 rounded-lg border border-neutral-850 text-xs">
-                        <span className="font-bold text-white block mb-1.5 text-xs text-red-400">{meal.name}</span>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                          {meal.items.map((it, itIdx) => (
-                            <div key={itIdx} className="bg-neutral-950 p-1.5 rounded border border-neutral-800 flex justify-between items-center text-[11px]">
-                              <span className="text-neutral-300 truncate pr-1">
-                                <strong className="text-white font-mono">{it.amountGrams}g</strong> {it.currentName}
-                              </span>
-                              <span className="text-[9px] text-amber-500 bg-amber-950/30 px-1 rounded shrink-0">
-                                {it.category}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => onNavigateTab('personal_plan')}
-                    className="mt-4 text-xs text-emerald-400 hover:text-white font-semibold flex items-center gap-1 block pt-2 border-t border-neutral-900 w-full justify-center text-center"
-                  >
-                    <span>Ver todas las comidas, suplementos y sustituir alimentos</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </button>
-                </div>
-              ) : (
-                <div className="py-4 text-center text-xs text-neutral-500">
-                  Tu expediente nutricional está en elaboración. Accede al Plan Personalizado para recalcular tus macros.
-                </div>
-              )}
-            </div>
-
-            {/* Rutina Asignada */}
-            <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Dumbbell className="w-4 h-4 text-red-500" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-white">
-                    Bloque de Entrenamiento de Fuerza
-                  </h3>
-                </div>
-                <span className="text-[10px] bg-neutral-900 text-neutral-400 px-2 py-0.5 rounded">
-                  Francy Viviana
-                </span>
-              </div>
-
-              {myRoutine ? (
-                <div>
-                  <h4 className="text-lg sm:text-xl font-black text-white mb-1 leading-tight">{myRoutine.title}</h4>
-                  <p className="text-sm text-neutral-300 mb-4 leading-relaxed">{myRoutine.objective}</p>
-
-                  <div className="space-y-3">
-                    {myRoutine.days.slice(0, 2).map((d, idx) => (
-                      <div key={idx} className="bg-neutral-900/70 border border-neutral-800 p-4 rounded-2xl">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-black text-red-300">{d.day}</span>
-                          <span className="text-xs text-neutral-300 text-right">Enfoque: {d.focus}</span>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {d.exercises.map((ex, exIdx) => (
-                            <div key={exIdx} className="bg-neutral-950 p-3 rounded-xl border border-neutral-800 text-sm flex flex-col justify-between min-h-[92px]">
-                              <span className="font-black text-white block text-sm leading-tight">{ex.name}</span>
-                              <span className="text-xs text-neutral-300 block font-mono mt-2">
-                                {ex.sets} series &times; {ex.reps.split(' ')[0]}
-                              </span>
-                              {ex.notes && <span className="text-[11px] text-neutral-400 italic mt-2 block line-clamp-2 leading-relaxed">&bull; {ex.notes}</span>}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-neutral-900">
-                    <span className="text-sm text-neutral-300 italic block leading-relaxed">
-                      <strong className="text-white not-italic font-semibold">Instrucción del Entrenador:</strong> "{myRoutine.specialistAdvice}"
-                    </span>
-                    <button
-                      onClick={() => onNavigateTab('personal_plan')}
-                      className="mt-4 rounded-2xl bg-red-600 hover:bg-red-500 px-4 py-3 text-sm text-white font-black block text-center w-full"
-                    >
-                      Ver plan completo de gimnasio →
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="py-6 text-center text-xs text-neutral-400">
-                  No tienes una rutina de fuerza programada.
-                </div>
-              )}
-            </div>
-
-          </div>
-
-          {/* Columna Derecha: Soporte y Gamificación */}
-          <div className="space-y-6">
-            
-            {/* Gamificación */}
-            <div className="bg-gradient-to-b from-neutral-950 to-neutral-900 border border-neutral-800 rounded-xl p-5 text-center">
-              <Coins className="w-8 h-8 text-amber-500 mx-auto mb-2 animate-bounce" />
-              <span className="text-[10px] uppercase tracking-widest text-neutral-400 block font-medium">
-                Tus Recompensas Acumuladas
-              </span>
-              <span className="text-3xl font-black text-amber-400 block my-1 font-mono">
-                {currentUser.tokens.toLocaleString()}
-              </span>
-              <p className="text-[11px] text-neutral-400 mb-4">
-                Canjeables por pases y productos en el Tonic Bar Imperial.
-              </p>
-              <button
-                onClick={() => onNavigateTab('tokens')}
-                className="w-full bg-neutral-900 hover:bg-neutral-800 text-xs text-amber-400 border border-amber-500/30 font-bold py-2 rounded-lg transition-colors"
-              >
-                Visitar Tienda de Recompensas
-              </button>
-            </div>
-
-            {/* Reto mensual snippet */}
-            <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-bold text-white uppercase tracking-wider">Reto Comunitario</span>
-                <Award className="w-4 h-4 text-red-500" />
-              </div>
-              <p className="text-xs font-semibold text-neutral-200">
-                Corte de Grasa Corporal Exclusivo
-              </p>
-              <div className="flex justify-between text-[10px] text-neutral-500 mt-2 mb-1">
-                <span>Tu avance</span>
-                <span className="text-white font-bold font-mono">65%</span>
-              </div>
-              <div className="w-full bg-neutral-900 h-1.5 rounded-full overflow-hidden">
-                <div className="bg-red-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, currentUser.muscleMass || 0)}%` }} />
-              </div>
-              <button
-                onClick={() => onNavigateTab('challenges')}
-                className="mt-3 text-[10px] text-neutral-400 hover:text-white block text-center w-full"
-              >
-                Ver ranking de alumnos &rarr;
-              </button>
-            </div>
-
-            {/* Soporte Directo */}
-            <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-left">
-              <span className="text-[10px] text-neutral-500 uppercase block mb-1">Coach Personalizado</span>
-              <div className="flex items-center gap-2.5">
-                <img 
-                  src="https://images.unsplash.com/photo-1594381898411-846e7d193883?w=150&auto=format&fit=crop&q=80" 
-                  alt="Francy Viviana" 
-                  className="w-9 h-9 rounded-full object-cover border border-neutral-700"
-                />
-                <div>
-                  <span className="text-xs font-bold text-white block">Francy Viviana Ruiz</span>
-                  <span className="text-[10px] text-emerald-400 block">Master Trainer • Turno Mañana</span>
-                </div>
-              </div>
-              <button
-                onClick={() => onNavigateTab('chat')}
-                className="mt-3 w-full bg-red-600 hover:bg-red-500 text-white text-xs font-semibold py-1.5 rounded transition-colors"
-              >
-                Abrir chat privado
-              </button>
-            </div>
-
-          </div>
-
-        </div>
-      )}
 
     </div>
   );

@@ -90,6 +90,13 @@ export async function updateUserProfileInApi(
     workouts_per_week: number;
     average_daily_steps: number;
     occupation_activity: 'sedentary' | 'light' | 'active' | 'physical';
+    eating_pattern: 'omnivore' | 'flexitarian' | 'pescatarian' | 'vegetarian' | 'vegan';
+    dietary_preferences: string;
+    excluded_foods: string;
+    food_allergies: string;
+    food_intolerances: string;
+    medical_conditions: string;
+    medications: string;
   }>,
 ): Promise<ClientProfile> {
   const user = await apiRequest<ApiUser>(`/users/${userId}`, {

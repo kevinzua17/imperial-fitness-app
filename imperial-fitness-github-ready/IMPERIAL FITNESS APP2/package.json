@@ -1,7 +1,7 @@
 {
   "name": "imperial-fitness-ai-ecosystem",
   "private": true,
-  "version": "1.20.5",
+  "version": "1.21.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

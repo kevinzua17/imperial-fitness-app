@@ -10,6 +10,8 @@ import { ExerciseImage } from './ExerciseImage';
 import { FoodImage } from './FoodImage';
 import { ZoomableAvatar } from './ZoomableAvatar';
 import { ImperialCarePanel } from './ImperialCarePanel';
+import { NutritionSafetyReviewCard } from './NutritionSafetyReviewCard';
+import { TrainingVolumeAuditPanel } from './TrainingVolumeAuditPanel';
 import { calculateEquivalenceFromApi, createDietPlanInApi, createFoodInApi, deleteDietPlanInApi, getMyDietPlanFromApi, getScienceGuidelinesFromApi, listDietDraftsFromApi, listDietPlansFromApi, listFoodsFromApi, previewNutritionTargetsFromApi, publishDietPlanInApi, updateDietPlanInApi, updateMyDietPlanMealsFromApi, type NutritionTargetApi } from '../services/nutritionService';
 import { createAssignedRoutineInApi, createRoutineTemplateInApi, deactivateAssignedRoutineInApi, getClientRoutineDeliveryHealthFromApi, getMyAssignedRoutineFromApi, listAssignedRoutinesFromApi, listRoutineTemplatesFromApi, updateAssignedRoutineInApi } from '../services/routineService';
 import { listClientsFromApi } from '../services/userService';
@@ -120,7 +122,7 @@ export const PersonalPlanView: React.FC<PersonalPlanViewProps> = ({
   const [trainingGoal, setTrainingGoal] = useState<TrainingGoal>('hipertrofia');
   const [trainingLevel, setTrainingLevel] = useState<TrainingLevel>('Intermedio');
   const [trainingSplit, setTrainingSplit] = useState<TrainingSplit>('auto');
-  const [trainingIntensityMode, setTrainingIntensityMode] = useState<TrainingIntensityMode>('auto_inteligente');
+  const [trainingIntensityMode, setTrainingIntensityMode] = useState<TrainingIntensityMode>('sin_tecnicas');
   const [routineExerciseSource, setRoutineExerciseSource] = useState<ExerciseSourceFilter>('all');
   const [apiExercises, setApiExercises] = useState<ExerciseCatalogItem[]>([]);
   const [openExercises, setOpenExercises] = useState<ExerciseCatalogItem[]>([]);
@@ -1594,6 +1596,9 @@ const handleUploadFoodImage = async (foodName: string, file?: File | null) => {
     fat: 'grasas',
     veg: 'vegetales',
     drink: 'bebidas',
+    fruit: 'frutas',
+    dairy: 'lácteos',
+    snack: 'snacks',
   }[category]);
 
   const substitutionCalorieAllowance = (item: DietMealItem) => {
@@ -1833,8 +1838,8 @@ const handleUploadFoodImage = async (foodName: string, file?: File | null) => {
         publishedAt: undefined,
         publishedBy: undefined,
         status: 'draft',
-        calculation: nutritionTargetApi,
-        basedOnMetricId: nutritionTargetApi.based_on_metric_id || undefined,
+        calculation: nutritionTargetApi || liveDietPlan.calculation,
+        basedOnMetricId: nutritionTargetApi?.based_on_metric_id || liveDietPlan.basedOnMetricId,
       };
       try {
         const draft = /^\d+$/.test(planToPublish.id) && liveDietPlan.status === 'draft'
@@ -2570,7 +2575,7 @@ const handleUploadFoodImage = async (foodName: string, file?: File | null) => {
             Plan Personalizado de Nutrición y Entrenamiento
           </h1>
           <p className="text-neutral-400 text-sm mt-1 max-w-xl leading-relaxed font-light">
-            Recálculo calórico al instante basado en medidas antropométricas reales y motor de sustitución de alimentos avalado por nutricionistas.
+            Cálculo trazable basado en datos corporales registrados, porciones individualizadas y sustituciones con equivalencia nutricional. La publicación final requiere revisión profesional cuando existan restricciones relevantes.
           </p>
         </div>
 
@@ -3022,7 +3027,7 @@ const handleUploadFoodImage = async (foodName: string, file?: File | null) => {
                 value={planNotesDraft}
                 onChange={(e) => setPlanNotesDraft(e.target.value)}
                 rows={3}
-                placeholder="Diagnóstico, indicaciones o ajustes del nutricionista/coach..."
+                placeholder="Indicaciones, observaciones o ajustes del profesional responsable..."
                 className="w-full bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-red-600 resize-none"
               />
             </div>
@@ -3033,7 +3038,7 @@ const handleUploadFoodImage = async (foodName: string, file?: File | null) => {
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
               <div>
                 <span className="block text-[10px] font-black uppercase tracking-wider text-emerald-400">Plan de alimentación</span>
-                <span className="mt-1 block text-sm font-black text-white">Ver criterio del nutricionista</span>
+                <span className="mt-1 block text-sm font-black text-white">Ver criterio profesional</span>
               </div>
               <span className="rounded-full border border-neutral-700 bg-black px-3 py-1 text-[10px] font-bold text-neutral-400 group-open:hidden">Abrir</span>
               <span className="hidden rounded-full border border-emerald-800 bg-emerald-950/40 px-3 py-1 text-[10px] font-bold text-emerald-300 group-open:inline">Ocultar</span>
@@ -3471,6 +3476,9 @@ const handleUploadFoodImage = async (foodName: string, file?: File | null) => {
               onLimitationsChange={setActiveLimitations}
               onLoadStateChange={setLimitationsLoadState}
             />
+
+            <NutritionSafetyReviewCard client={activeClientObj} />
+            <TrainingVolumeAuditPanel client={activeClientObj} routine={defaultRoutine} />
 
             {/* Rutina asignada actualmente al cliente */}
             {defaultRoutine && (

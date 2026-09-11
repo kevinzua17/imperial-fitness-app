@@ -39,6 +39,21 @@ REQUIRED_FILES = [
     "docs/CHECKLIST_LANZAMIENTO_500_v1.20.0.md",
     "docs/ROLLBACK_v1.20.0.md",
     "CHANGELOG_v1.20.0.md",
+    "CHANGELOG_v1.21.0.md",
+    "src/app/modules.ts",
+    "src/components/ClientPlanView.tsx",
+    "src/components/ProgressHubView.tsx",
+    "src/components/CoachHubView.tsx",
+    "src/components/AccountHubView.tsx",
+    "src/components/NutritionSafetyReviewCard.tsx",
+    "src/components/TrainingVolumeAuditPanel.tsx",
+    "src/services/reportService.ts",
+    "src/utils/trainingVolume.ts",
+    "src/types/domain.ts",
+    "backend/app/routers/reports.py",
+    "backend/app/services/plan_pdf.py",
+    "backend/supabase/migrations/035_restore_body_metrics_history_and_session.sql",
+    "backend/supabase/migrations/036_simplified_experience_nutrition_safety.sql",
 ]
 
 BACKEND_PRODUCTION_KEYS = [
@@ -94,8 +109,20 @@ def main() -> int:
     assert_contains("docs/CHECKLIST_LANZAMIENTO_500_v1.20.0.md", ["BLOQUEANTE", "500", "password_hash"])
     assert_contains("docs/ROLLBACK_v1.20.0.md", ["v1.19.1", "No eliminar columnas", "password_hash"])
     assert_contains("backend/supabase/migrations/034_nutrition_exercise_launch_hardening.sql", ["begin;", "commit;", "add column if not exists"])
+    assert_contains("backend/supabase/migrations/035_restore_body_metrics_history_and_session.sql", ["pg_advisory_xact_lock", "bmr_source", "No se crea idx_body_metrics_user_effective_date_desc"] )
+    assert_contains("backend/supabase/migrations/036_simplified_experience_nutrition_safety.sql", ["food_allergies", "food_intolerances", "medical_conditions", "medications"])
+    assert_contains("src/app/modules.ts", ["dashboard", "personal_plan", "progress_hub", "coach_hub", "profile"])
+    assert_contains("backend/app/routers/reports.py", ["plan.pdf", "build_plan_pdf"])
+    assert_contains("backend/app/services/plan_pdf.py", ["reportlab", "routine", "diet"])
 
-    print("OK - paquete v1.20.0 listo para validación de producción controlada.")
+    migration_027 = assert_file("backend/supabase/migrations/027_inbody_fecha_real_medicion.sql").read_text(encoding="utf-8")
+    migration_028 = assert_file("backend/supabase/migrations/028_mis_medidas_fecha_real_global.sql").read_text(encoding="utf-8")
+    if "add column measured_at %s" not in migration_027 or "v_created_at_type" not in migration_027:
+        raise AssertionError("027 no garantiza el mismo tipo temporal de created_at")
+    if "coalesce(measured_at, created_at) desc" in migration_028 and "--   (user_id, coalesce" not in migration_028:
+        raise AssertionError("028 todavía contiene un índice funcional COALESCE activo")
+
+    print("OK - paquete v1.21.0 Simple pasó los controles estáticos de preparación disponibles.")
     return 0
 
 

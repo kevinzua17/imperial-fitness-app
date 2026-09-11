@@ -125,6 +125,12 @@ def update_user_access(
         _apply_access_status(user, status, changed_at)
     # Las fechas enviadas explícitamente por administración prevalecen sobre
     # las fechas automáticas creadas al cambiar el estado.
+    nutrition_safety_fields = {"eating_pattern", "dietary_preferences", "excluded_foods", "food_allergies", "food_intolerances", "medical_conditions", "medications"}
+    if nutrition_safety_fields.intersection(data):
+        # Cualquier cambio del cliente invalida la revisión previa del coach.
+        user.nutrition_reviewed_at = None
+        user.nutrition_reviewed_by = None
+
     for key, value in data.items():
         setattr(user, key, value)
 
@@ -204,11 +210,17 @@ def update_user_profile(
         if not trainer or trainer.role != "trainer" or trainer.status != "active":
             raise HTTPException(status_code=400, detail="Entrenador inválido o inactivo")
 
-    allowed_for_self = {"name", "email", "avatar_url", "phone_number", "whatsapp_opt_in", "weight", "height", "age", "gender", "body_fat", "muscle_mass", "goal", "activity_level", "workouts_per_week", "average_daily_steps", "occupation_activity"}
-    allowed_for_trainer = {"phone_number", "whatsapp_opt_in", "weight", "height", "age", "gender", "body_fat", "muscle_mass", "goal", "activity_level", "workouts_per_week", "average_daily_steps", "occupation_activity", "avatar_url"}
+    allowed_for_self = {"name", "email", "avatar_url", "phone_number", "whatsapp_opt_in", "weight", "height", "age", "gender", "body_fat", "muscle_mass", "goal", "activity_level", "workouts_per_week", "average_daily_steps", "occupation_activity", "eating_pattern", "dietary_preferences", "excluded_foods", "food_allergies", "food_intolerances", "medical_conditions", "medications"}
+    allowed_for_trainer = {"phone_number", "whatsapp_opt_in", "weight", "height", "age", "gender", "body_fat", "muscle_mass", "goal", "activity_level", "workouts_per_week", "average_daily_steps", "occupation_activity", "eating_pattern", "dietary_preferences", "excluded_foods", "food_allergies", "food_intolerances", "medical_conditions", "medications", "avatar_url"}
     if current_user.role != "admin":
         allowed = allowed_for_self if current_user.id == user.id else allowed_for_trainer
         data = {key: value for key, value in data.items() if key in allowed}
+
+    nutrition_safety_fields = {"eating_pattern", "dietary_preferences", "excluded_foods", "food_allergies", "food_intolerances", "medical_conditions", "medications"}
+    if nutrition_safety_fields.intersection(data):
+        # Cualquier cambio del cliente invalida la revisión previa del coach.
+        user.nutrition_reviewed_at = None
+        user.nutrition_reviewed_by = None
 
     for key, value in data.items():
         setattr(user, key, value)

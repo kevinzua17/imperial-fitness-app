@@ -3,7 +3,6 @@ import {
   safeRemoveItem,
   safeSessionGetItem,
   safeSessionRemoveItem,
-  safeSessionSetItem,
   safeSetItem,
 } from '../utils/safeStorage';
 
@@ -37,16 +36,17 @@ const SESSION_HINT_KEY = 'imperial_session_hint';
 const SESSION_ACCESS_TOKEN_KEY = 'imperial_session_access_token_v123';
 
 export function setAccessToken(token: string | null) {
+  // v1.21: el access token vive únicamente en memoria. La continuidad tras F5
+  // se recupera con la cookie refresh HttpOnly/Secure del backend, inaccesible a
+  // JavaScript. El único valor persistente es un hint no sensible de sesión.
   accessTokenInMemory = token || '';
   if (token) {
-    // sessionStorage sobrevive a F5 y permanece limitado a la pestaña actual.
-    // No se guarda el token en localStorage ni se almacenan contraseñas.
-    safeSessionSetItem(SESSION_ACCESS_TOKEN_KEY, token);
     safeSetItem(SESSION_HINT_KEY, '1');
   } else {
-    safeSessionRemoveItem(SESSION_ACCESS_TOKEN_KEY);
     safeRemoveItem(SESSION_HINT_KEY);
   }
+  // Limpia restos de v1.20.x que podían persistir el access token por pestaña.
+  safeSessionRemoveItem(SESSION_ACCESS_TOKEN_KEY);
 }
 
 export function clearAccessToken() {
@@ -57,30 +57,22 @@ export function clearAccessToken() {
 }
 
 export function bootstrapLegacyAccessToken() {
-  // Restauración principal para una recarga normal de la misma pestaña.
+  // Migración de una sola ejecución: si una versión anterior dejó un token en
+  // sessionStorage/localStorage, se usa solo durante este ciclo y se elimina de
+  // inmediato. Las recargas siguientes se restauran mediante refresh HttpOnly.
   const sessionToken = safeSessionGetItem(SESSION_ACCESS_TOKEN_KEY);
-  if (sessionToken) {
-    accessTokenInMemory = sessionToken;
-    safeSetItem(SESSION_HINT_KEY, '1');
-    return;
-  }
-
-  // Compatibilidad de una sola vez con versiones antiguas que usaban localStorage.
   const legacyToken = safeGetItem(LEGACY_TOKEN_KEY);
-  if (legacyToken) {
-    accessTokenInMemory = legacyToken;
-    safeSessionSetItem(SESSION_ACCESS_TOKEN_KEY, legacyToken);
+  const migratedToken = sessionToken || legacyToken;
+  if (migratedToken) {
+    accessTokenInMemory = migratedToken;
     safeSetItem(SESSION_HINT_KEY, '1');
-    safeRemoveItem(LEGACY_TOKEN_KEY);
   }
+  safeSessionRemoveItem(SESSION_ACCESS_TOKEN_KEY);
+  safeRemoveItem(LEGACY_TOKEN_KEY);
 }
 
 export function hasAuthSessionHint() {
-  return Boolean(
-    accessTokenInMemory
-    || safeSessionGetItem(SESSION_ACCESS_TOKEN_KEY)
-    || safeGetItem(SESSION_HINT_KEY)
-  );
+  return Boolean(accessTokenInMemory || safeGetItem(SESSION_HINT_KEY));
 }
 
 
@@ -277,6 +269,39 @@ async function apiRequestInternal<T>(path: string, options: RequestInit = {}, al
   }
 
   return response.json() as Promise<T>;
+}
+
+
+
+export async function apiBlobRequest(path: string, options: RequestInit = {}, allowRefresh = true): Promise<Blob> {
+  const token = getToken();
+  const headers = new Headers(options.headers);
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+
+  const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers,
+    credentials: 'include',
+    cache: 'no-store',
+  });
+
+  if (response.status === 401 && allowRefresh && !path.startsWith('/auth/refresh')) {
+    const newToken = await refreshAccessToken();
+    if (newToken) return apiBlobRequest(path, options, false);
+  }
+
+  if (!response.ok) {
+    let rawMessage: unknown = '';
+    try {
+      const payload = await response.json();
+      rawMessage = payload.detail || payload.message || '';
+    } catch {
+      rawMessage = '';
+    }
+    throw new ApiError(cleanServiceMessage(rawMessage, response.status), response.status);
+  }
+
+  return response.blob();
 }
 
 export const API_URL = API_BASE_URL;

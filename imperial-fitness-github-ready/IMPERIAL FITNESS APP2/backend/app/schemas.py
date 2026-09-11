@@ -71,6 +71,13 @@ class UserBase(SanitizedModel):
     workouts_per_week: int | None = Field(default=None, ge=0, le=14)
     average_daily_steps: int | None = Field(default=None, ge=0, le=100000)
     occupation_activity: str | None = Field(default=None, pattern="^(sedentary|light|active|physical)$")
+    eating_pattern: str | None = Field(default=None, pattern="^(omnivore|flexitarian|pescatarian|vegetarian|vegan)$")
+    dietary_preferences: str = Field(default="", max_length=1200)
+    excluded_foods: str = Field(default="", max_length=1200)
+    food_allergies: str = Field(default="", max_length=1200)
+    food_intolerances: str = Field(default="", max_length=1200)
+    medical_conditions: str = Field(default="", max_length=1600)
+    medications: str = Field(default="", max_length=1600)
     phone_number: str | None = Field(default=None, max_length=40)
     whatsapp_opt_in: int = Field(default=1, ge=0, le=1)
 
@@ -88,6 +95,13 @@ class PublicClientRegister(SanitizedModel):
     workouts_per_week: int | None = Field(default=None, ge=0, le=14)
     average_daily_steps: int | None = Field(default=None, ge=0, le=100000)
     occupation_activity: str | None = Field(default=None, pattern="^(sedentary|light|active|physical)$")
+    eating_pattern: str | None = Field(default=None, pattern="^(omnivore|flexitarian|pescatarian|vegetarian|vegan)$")
+    dietary_preferences: str = Field(default="", max_length=1200)
+    excluded_foods: str = Field(default="", max_length=1200)
+    food_allergies: str = Field(default="", max_length=1200)
+    food_intolerances: str = Field(default="", max_length=1200)
+    medical_conditions: str = Field(default="", max_length=1600)
+    medications: str = Field(default="", max_length=1600)
     phone_number: str = Field(min_length=7, max_length=40)
     whatsapp_opt_in: int = Field(default=1, ge=0, le=1)
     weight: float | None = Field(default=None, ge=20, le=300)
@@ -114,6 +128,13 @@ class UserProfileUpdate(SanitizedModel):
     workouts_per_week: int | None = Field(default=None, ge=0, le=14)
     average_daily_steps: int | None = Field(default=None, ge=0, le=100000)
     occupation_activity: str | None = Field(default=None, pattern="^(sedentary|light|active|physical)$")
+    eating_pattern: str | None = Field(default=None, pattern="^(omnivore|flexitarian|pescatarian|vegetarian|vegan)$")
+    dietary_preferences: str | None = Field(default=None, max_length=1200)
+    excluded_foods: str | None = Field(default=None, max_length=1200)
+    food_allergies: str | None = Field(default=None, max_length=1200)
+    food_intolerances: str | None = Field(default=None, max_length=1200)
+    medical_conditions: str | None = Field(default=None, max_length=1600)
+    medications: str | None = Field(default=None, max_length=1600)
     phone_number: str | None = Field(default=None, max_length=40)
     whatsapp_opt_in: int | None = Field(default=None, ge=0, le=1)
 
@@ -137,6 +158,8 @@ class UserAccessUpdate(SanitizedModel):
 
 class UserOut(UserBase):
     id: int
+    nutrition_reviewed_at: datetime | None = None
+    nutrition_reviewed_by: int | None = None
     pending_at: datetime | None = None
     activated_at: datetime | None = None
     suspended_at: datetime | None = None
@@ -484,6 +507,12 @@ class WorkoutSetCreate(SanitizedModel):
     set_number: int = Field(default=1, ge=1, le=20)
     rir: int | None = Field(default=None, ge=0, le=10)
     notes: str = Field(default="", max_length=1500)
+    # Contexto de prescripción: se usa para la sugerencia de progresión y no
+    # necesita persistirse en workout_set_logs.
+    target_min_reps: int | None = Field(default=None, ge=1, le=100)
+    target_max_reps: int | None = Field(default=None, ge=1, le=100)
+    target_sets: int | None = Field(default=None, ge=1, le=20)
+    target_rir: int | None = Field(default=None, ge=0, le=10)
 
 
 class WorkoutSetOut(WorkoutSetCreate):

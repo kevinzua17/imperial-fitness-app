@@ -99,6 +99,24 @@ def _ensure_sqlite_user_columns() -> None:
         statements.append("ALTER TABLE users ADD COLUMN average_daily_steps INTEGER")
     if "occupation_activity" not in columns:
         statements.append("ALTER TABLE users ADD COLUMN occupation_activity VARCHAR(30)")
+    if "eating_pattern" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN eating_pattern VARCHAR(30)")
+    if "dietary_preferences" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN dietary_preferences TEXT DEFAULT ''")
+    if "excluded_foods" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN excluded_foods TEXT DEFAULT ''")
+    if "food_allergies" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN food_allergies TEXT DEFAULT ''")
+    if "food_intolerances" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN food_intolerances TEXT DEFAULT ''")
+    if "medical_conditions" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN medical_conditions TEXT DEFAULT ''")
+    if "medications" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN medications TEXT DEFAULT ''")
+    if "nutrition_reviewed_at" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN nutrition_reviewed_at DATETIME")
+    if "nutrition_reviewed_by" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN nutrition_reviewed_by INTEGER")
 
     if statements:
         with engine.begin() as conn:

@@ -19,10 +19,15 @@ import { getMyAssignedRoutineFromApi, listAssignedRoutinesFromApi } from './serv
 import { getBrandingFromApi } from './services/mediaService';
 import type { BrandingSettings } from './services/mediaService';
 import { safeGetItem, safeRemoveItem, safeSetItem } from './utils/safeStorage';
+import { getAllowedModuleIds, normalizeRequestedModule } from './app/modules';
 
 const DashboardView = lazy(() => import('./components/DashboardView').then(module => ({ default: module.DashboardView })));
 const ClientsView = lazy(() => import('./components/ClientsView').then(module => ({ default: module.ClientsView })));
 const PersonalPlanView = lazy(() => import('./components/PersonalPlanView').then(module => ({ default: module.PersonalPlanView })));
+const ClientPlanView = lazy(() => import('./components/ClientPlanView').then(module => ({ default: module.ClientPlanView })));
+const ProgressHubView = lazy(() => import('./components/ProgressHubView').then(module => ({ default: module.ProgressHubView })));
+const CoachHubView = lazy(() => import('./components/CoachHubView').then(module => ({ default: module.CoachHubView })));
+const AccountHubView = lazy(() => import('./components/AccountHubView').then(module => ({ default: module.AccountHubView })));
 const SocialWallView = lazy(() => import('./components/SocialWallView').then(module => ({ default: module.SocialWallView })));
 const TokenShopView = lazy(() => import('./components/TokenShopView').then(module => ({ default: module.TokenShopView })));
 const ProgressAnalyticsView = lazy(() => import('./components/ProgressAnalyticsView').then(module => ({ default: module.ProgressAnalyticsView })));
@@ -45,6 +50,13 @@ const MembershipView = lazy(() => import('./components/MembershipView').then(mod
 const RecoveryRequestsView = lazy(() => import('./components/RecoveryRequestsView').then(module => ({ default: module.RecoveryRequestsView })));
 
 const LAST_ACTIVE_TAB_KEY = 'imperial_last_active_tab';
+const DEV_MODE = import.meta.env.VITE_DEV_MODE === 'true';
+
+const resolvedTabForRole = (tab: string, role: ClientProfile['role']) => normalizeRequestedModule(tab, role);
+const isTabAllowedForRole = (tab: string, role: ClientProfile['role']) => {
+  const resolved = resolvedTabForRole(tab, role);
+  return getAllowedModuleIds(role, DEV_MODE).includes(resolved);
+};
 
 const runWhenIdle = (callback: () => void | Promise<void>, delay = 250) => {
   const runner = () => {
@@ -89,29 +101,19 @@ export default function App() {
   const routineMissingConfirmationsRef = useRef(0);
   const dietMissingConfirmationsRef = useRef(0);
 
-  const allowedTabsByRole: Record<ClientProfile['role'], string[]> = {
-    admin: ['dashboard', 'profile', 'clients', 'personal_plan', 'timer', 'exercises', 'imperial_path', 'social', 'chat', 'history', 'photos', 'body_metrics', 'challenges', 'membership', 'recovery', 'sync', 'specialist_assistant', 'user_management', 'implementation', 'finance'],
-    trainer: ['dashboard', 'profile', 'clients', 'personal_plan', 'timer', 'exercises', 'imperial_path', 'social', 'chat', 'history', 'photos', 'body_metrics', 'challenges', 'specialist_assistant'],
-    client: ['dashboard', 'profile', 'personal_plan', 'timer', 'exercises', 'imperial_path', 'social', 'chat', 'history', 'friends', 'photos', 'tokens', 'body_metrics', 'challenges', 'membership'],
-  };
-
-  const isTabAllowed = (tab: string, role: ClientProfile['role']) => {
-    const devMode = import.meta.env.VITE_DEV_MODE === 'true';
-    if (tab === 'implementation' && !devMode) return false;
-    return allowedTabsByRole[role].includes(tab);
-  };
-
   const switchTabSafely = (tab: string) => {
-    if (currentUser?.role === 'client' && membershipRestricted && !['membership', 'profile'].includes(tab)) {
-      setActiveTab('membership');
-      return;
-    }
-
-    if (!currentUser || isTabAllowed(tab, currentUser.role)) {
+    if (!currentUser) {
       setActiveTab(tab);
       return;
     }
-    setActiveTab('dashboard');
+
+    const resolvedTab = resolvedTabForRole(tab, currentUser.role);
+    if (currentUser.role === 'client' && membershipRestricted && resolvedTab !== 'profile') {
+      setActiveTab('profile');
+      return;
+    }
+
+    setActiveTab(isTabAllowedForRole(resolvedTab, currentUser.role) ? resolvedTab : 'dashboard');
   };
 
   const loadSecondaryDataForUser = useCallback((user: ClientProfile) => {
@@ -129,7 +131,7 @@ export default function App() {
           const membership = membershipResult.value;
           const restricted = Boolean(membership.restricted_access || membership.premium_modules_blocked);
           setMembershipRestricted(restricted);
-          if (restricted) setActiveTab(prev => ['membership', 'profile'].includes(prev) ? prev : 'membership');
+          if (restricted) setActiveTab('profile');
         } else {
           setMembershipRestricted(false);
         }
@@ -189,7 +191,7 @@ export default function App() {
       const user = await getCurrentUserFromApi();
       setCurrentUser(user);
       setUsers(previous => [user, ...previous.filter(item => item.id !== user.id)]);
-      setActiveTab(previous => isTabAllowed(previous, user.role) ? previous : 'dashboard');
+      setActiveTab(previous => isTabAllowedForRole(previous, user.role) ? resolvedTabForRole(previous, user.role) : 'dashboard');
       loadSecondaryDataForUser(user);
     } catch (error) {
       const status = error instanceof ApiError ? error.status : 0;
@@ -235,7 +237,7 @@ export default function App() {
   }, [restoreSession]);
 
   useEffect(() => {
-    if (!currentUser || !isTabAllowed(activeTab, currentUser.role)) return;
+    if (!currentUser || !isTabAllowedForRole(activeTab, currentUser.role)) return;
     safeSetItem(LAST_ACTIVE_TAB_KEY, activeTab);
     const url = new URL(window.location.href);
     url.searchParams.set('tab', activeTab);
@@ -252,8 +254,8 @@ export default function App() {
       const membership = await getMyMembershipFromApi();
       const restricted = Boolean(membership.restricted_access || membership.premium_modules_blocked);
       setMembershipRestricted(restricted);
-      if (restricted && !['membership', 'profile'].includes(activeTab)) {
-        setActiveTab('membership');
+      if (restricted && resolvedTabForRole(activeTab, currentUser.role) !== 'profile') {
+        setActiveTab('profile');
       }
     } catch {
       // No bloquea el acceso visual por una consulta lenta o temporalmente fallida.
@@ -265,7 +267,7 @@ export default function App() {
   const handleLogin = (user: ClientProfile) => {
     setCurrentUser(user);
     setUsers(prev => [user, ...prev.filter(item => item.id !== user.id)]);
-    setActiveTab(previous => isTabAllowed(previous, user.role) ? previous : 'dashboard');
+    setActiveTab(previous => isTabAllowedForRole(previous, user.role) ? resolvedTabForRole(previous, user.role) : 'dashboard');
     loadSecondaryDataForUser(user);
   };
 
@@ -275,7 +277,7 @@ export default function App() {
       const apiUser = await loginWithApi(email, password);
       setCurrentUser(apiUser);
       setUsers(prev => [apiUser, ...prev.filter(item => item.id !== apiUser.id)]);
-      setActiveTab(previous => isTabAllowed(previous, apiUser.role) ? previous : 'dashboard');
+      setActiveTab(previous => isTabAllowedForRole(previous, apiUser.role) ? resolvedTabForRole(previous, apiUser.role) : 'dashboard');
       setTransitionMessage('');
       loadSecondaryDataForUser(apiUser);
     } finally {
@@ -443,9 +445,13 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (currentUser && !isTabAllowed(activeTab, currentUser.role)) {
+    if (!currentUser) return;
+    const resolved = resolvedTabForRole(activeTab, currentUser.role);
+    if (!isTabAllowedForRole(resolved, currentUser.role)) {
       setActiveTab('dashboard');
+      return;
     }
+    if (resolved !== activeTab) setActiveTab(resolved);
   }, [currentUser?.role, activeTab]);
 
   useEffect(() => {
@@ -625,7 +631,15 @@ export default function App() {
         )}
 
         {activeTab === 'profile' && (
-          <ProfileView currentUser={currentUser} onAvatarUpdated={handleAvatarUpdated} onProfileUpdated={handleProfileUpdated} />
+          currentUser.role === 'client'
+            ? <AccountHubView
+                currentUser={currentUser}
+                onAvatarUpdated={handleAvatarUpdated}
+                onProfileUpdated={handleProfileUpdated}
+                onMembershipUpdated={refreshMembershipState}
+                initialTab={membershipRestricted ? 'membership' : 'profile'}
+              />
+            : <ProfileView currentUser={currentUser} onAvatarUpdated={handleAvatarUpdated} onProfileUpdated={handleProfileUpdated} />
         )}
 
         {currentUser.role !== 'client' && activeTab === 'clients' && (
@@ -638,17 +652,38 @@ export default function App() {
         )}
 
         {activeTab === 'personal_plan' && (
-          <PersonalPlanView 
-            users={users}
+          currentUser.role === 'client'
+            ? <ClientPlanView
+                currentUser={currentUser}
+                routine={routines.find(routine => routine.clientId === currentUser.id)}
+                diet={diets.find(diet => diet.clientId === currentUser.id)}
+                onRoutineUpdated={handleGenerateRoutine}
+                onDietUpdated={handleGenerateDiet}
+              />
+            : <PersonalPlanView 
+                users={users}
+                currentUser={currentUser}
+                selectedClientId={selectedClientForPlanId}
+                onGenerateDiet={handleGenerateDiet}
+                onGenerateRoutine={handleGenerateRoutine}
+                onRemoveDiet={handleRemoveDiet}
+                onRemoveRoutine={handleRemoveRoutine}
+                existingDiets={diets}
+                existingRoutines={routines}
+              />
+        )}
+
+        {currentUser.role === 'client' && activeTab === 'progress_hub' && (
+          <ProgressHubView
             currentUser={currentUser}
-            selectedClientId={selectedClientForPlanId}
-            onGenerateDiet={handleGenerateDiet}
-            onGenerateRoutine={handleGenerateRoutine}
-            onRemoveDiet={handleRemoveDiet}
-            onRemoveRoutine={handleRemoveRoutine}
-            existingDiets={diets}
-            existingRoutines={routines}
+            users={users}
+            onUpdateClientMetrics={handleUpdateClientMetrics}
+            onAddPhoto={handleAddProgressPhoto}
           />
+        )}
+
+        {currentUser.role === 'client' && activeTab === 'coach_hub' && (
+          <CoachHubView currentUser={currentUser} />
         )}
 
         {activeTab === 'timer' && (
@@ -663,7 +698,7 @@ export default function App() {
           <ImperialPathView currentUser={currentUser} />
         )}
 
-        {activeTab === 'membership' && (
+        {currentUser.role === 'admin' && activeTab === 'membership' && (
           <MembershipView currentUser={currentUser} onMembershipUpdated={refreshMembershipState} />
         )}
 

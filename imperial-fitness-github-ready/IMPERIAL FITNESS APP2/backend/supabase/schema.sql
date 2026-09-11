@@ -47,6 +47,15 @@ create table if not exists public.users (
   body_fat double precision,
   muscle_mass double precision,
   goal varchar(160),
+  eating_pattern varchar(30) check (eating_pattern is null or eating_pattern in ('omnivore','flexitarian','pescatarian','vegetarian','vegan')),
+  dietary_preferences text not null default '',
+  excluded_foods text not null default '',
+  food_allergies text not null default '',
+  food_intolerances text not null default '',
+  medical_conditions text not null default '',
+  medications text not null default '',
+  nutrition_reviewed_at timestamptz,
+  nutrition_reviewed_by bigint references public.users(id) on delete set null,
   phone_number varchar(40),
   whatsapp_opt_in integer not null default 1 check (whatsapp_opt_in in (0, 1)),
   created_at timestamptz not null default now()
@@ -58,6 +67,7 @@ create index if not exists idx_users_role on public.users(role);
 create index if not exists idx_users_status on public.users(status);
 create index if not exists idx_users_phone_number on public.users(phone_number);
 create index if not exists idx_users_assigned_trainer_id on public.users(assigned_trainer_id);
+create index if not exists idx_users_nutrition_review_pending on public.users(role, nutrition_reviewed_at) where role = 'client';
 create index if not exists idx_users_last_login_at on public.users(last_login_at desc);
 
 create table if not exists public.refresh_tokens (

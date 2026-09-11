@@ -150,6 +150,10 @@ export async function createWorkoutSetInApi(payload: {
   setNumber: number;
   rir?: number;
   notes?: string;
+  targetMinReps?: number;
+  targetMaxReps?: number;
+  targetSets?: number;
+  targetRir?: number;
 }): Promise<WorkoutSetApi> {
   return apiRequest<WorkoutSetApi>('/progress/workout-sets', {
     method: 'POST',
@@ -161,6 +165,10 @@ export async function createWorkoutSetInApi(payload: {
       set_number: payload.setNumber,
       rir: payload.rir,
       notes: payload.notes || '',
+      target_min_reps: payload.targetMinReps,
+      target_max_reps: payload.targetMaxReps,
+      target_sets: payload.targetSets,
+      target_rir: payload.targetRir,
     }),
   });
 }

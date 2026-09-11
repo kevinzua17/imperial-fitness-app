@@ -211,11 +211,23 @@ def calculate_nutrition_targets(
     adjustment = GOAL_ADJUSTMENTS[normalized_goal]
     target = round(maintenance * (1 + adjustment))
 
-    # Conservative lower guard, surfaced as a warning rather than hidden.
+    # Product guardrail, not a clinical definition of a safe intake. Energy
+    # availability cannot be inferred from a sex-specific calorie floor alone.
     minimum = 1200 if sex == "F" else 1500
     if normalized_goal in {"fat_loss", "recomposition"} and target < minimum:
         target = minimum
-        warnings.append(f"El objetivo fue limitado a {minimum} kcal para evitar una prescripción automática excesivamente baja.")
+        warnings.append(
+            f"El cálculo automático se detuvo en el guardrail de {minimum} kcal. Este valor no garantiza disponibilidad energética adecuada; requiere seguimiento de recuperación, rendimiento y evolución."
+        )
+
+    if normalized_goal in {"fat_loss", "recomposition"} and normalized_activity in {"very_active", "athlete"}:
+        warnings.append(
+            "Déficit + actividad alta: vigila rendimiento, recuperación, sueño, hambre y ritmo de cambio de peso. La disponibilidad energética baja no puede descartarse solo con este cálculo."
+        )
+    if normalized_goal in {"fat_loss", "recomposition"} and target <= round(bmr * 1.05):
+        warnings.append(
+            "La ingesta objetivo queda muy próxima a la TMB calculada/registrada. Revisa individualmente la prescripción antes de publicarla y ajusta según respuesta real."
+        )
 
     if body_fat_percent not in {None, ""}:
         body_fat = _required_number(body_fat_percent, "porcentaje de grasa", 2, 70)

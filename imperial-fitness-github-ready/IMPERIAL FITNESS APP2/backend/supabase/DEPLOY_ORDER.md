@@ -24,8 +24,10 @@ Ejecutar en **Supabase → SQL Editor**, en este orden:
 16. `backend/supabase/migrations/031_active_plan_assignment_integrity.sql`
 17. `backend/supabase/migrations/032_assigned_routine_persistence_guard.sql`
 18. `backend/supabase/migrations/034_nutrition_exercise_launch_hardening.sql`
-19. `backend/supabase/diagnostics/VERIFICAR_MIGRACION_034_v1.20.0.sql` (solo lectura)
-20. `deploy/pilot/supabase/01_VERIFICAR_INSTALACION.sql`
+19. `backend/supabase/migrations/035_restore_body_metrics_history_and_session.sql`
+20. `backend/supabase/migrations/036_simplified_experience_nutrition_safety.sql`
+21. `backend/supabase/diagnostics/VERIFICAR_MIGRACION_034_v1.20.0.sql` (solo lectura)
+22. `deploy/pilot/supabase/01_VERIFICAR_INSTALACION.sql`
 
 ## Base existente
 
@@ -35,6 +37,8 @@ No repetir scripts destructivos. En una base ya instalada, ejecutar únicamente 
 backend/supabase/migrations/031_active_plan_assignment_integrity.sql
 backend/supabase/migrations/032_assigned_routine_persistence_guard.sql
 backend/supabase/migrations/034_nutrition_exercise_launch_hardening.sql
+backend/supabase/migrations/035_restore_body_metrics_history_and_session.sql
+backend/supabase/migrations/036_simplified_experience_nutrition_safety.sql
 ```
 
 Después del SQL, redesplegar Render y Vercel. Asigna dos rutinas consecutivas al mismo cliente y confirma que únicamente la más reciente permanezca activa y visible en “Mi plan”. Para revisar el caso de Stefanny sin modificar datos, ejecuta después:
@@ -61,3 +65,11 @@ backend/supabase/diagnostics/VERIFICAR_RLS_Y_ROL_API_v1.20.0.sql
 ```
 
 La migración 034 es aditiva: no elimina usuarios, contraseñas, tokens, planes ni ejercicios. No ejecutar una reversión destructiva del esquema; ante una incidencia, volver a desplegar v1.19.1 y conservar las columnas nuevas sin uso.
+
+
+## v1.21.0 — Imperial Fitness Simple
+
+Después de v1.20.x ejecutar obligatoriamente `035_restore_body_metrics_history_and_session.sql` (versión corregida sin índice COALESCE no-IMMUTABLE) y luego `036_simplified_experience_nutrition_safety.sql`. La migración 036 es aditiva y agrega la ficha de seguridad/preferencias alimentarias; no elimina usuarios, planes, contraseñas ni mediciones.
+
+### Nota v1.21.0 — 027/028 v1.21.0 hardening
+Para instalaciones limpias, las migraciones 027 y 028 ya crean `measured_at` y `recorded_at` con el mismo tipo de `created_at` y no crean el índice funcional `COALESCE` que podía provocar `ERROR 42P17`. En bases ya existentes no es necesario volver a ejecutar 027/028: aplicar 035 corregida y 036 según el orden de despliegue.

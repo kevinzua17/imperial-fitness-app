@@ -1,0 +1,29 @@
+IMPERIAL FITNESS v1.21.0 SIMPLE — VALIDACION DE ENTREGA
+Fecha: 2026-09-11
+
+RESULTADOS EJECUTADOS EN EL ENTORNO DE PREPARACION
+[OK] Python compileall: backend/app sin errores sintácticos.
+[OK] Secret scan: no se detectaron secretos evidentes en el paquete versionable.
+[OK] Production readiness v1.21.0: controles estáticos superados.
+[OK] TypeScript/TSX parser: 110 archivos parseados sin errores sintácticos.
+[OK] Validación semántica asistida de los archivos v1.21 modificados: sin diagnósticos estructurales relevantes después de las correcciones.
+[OK] PDF smoke test: PDF A4 válido, 2 páginas, con rutina/alimentación/asset local.
+[OK] Migración 035: no crea índice COALESCE problemático.
+[OK] Migraciones 027/028 para instalación limpia: columnas temporales creadas con el tipo de created_at; índice funcional problemático eliminado.
+[OK] Migración 036 incluida.
+
+CORRECCIONES ADICIONALES DETECTADAS DURANTE LA VALIDACION
+[OK] Estado archived no puede entrar por defecto en createDietPlanInApi.
+[OK] Categorías fruit/dairy/snack alineadas con DietMealItem.
+[OK] NutritionTargetApi serializable dentro de calculation.
+[OK] Dashboard sin bloques cliente duplicados después del early-return simplificado.
+[OK] Borrador de registro de series sin propiedades duplicadas/sobrescritas.
+[OK] Perfil: activityLevel ya no propaga undefined al estado controlado.
+
+VALIDACION PENDIENTE FUERA DE ESTE ENTORNO
+[PENDIENTE CI] npm ci
+[PENDIENTE CI] npm run typecheck con dependencias reales
+[PENDIENTE CI] npm run test
+[PENDIENTE CI] npm run build
+
+Motivo: el contenedor de preparación no puede resolver registry.npmjs.org (DNS), por lo que npm no puede reconstruir todas las dependencias. Esto es una limitación del entorno de preparación y NO debe ocultarse ni confundirse con un build certificado.

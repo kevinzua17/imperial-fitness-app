@@ -1,30 +1,33 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  LayoutDashboard,
-  Users,
-  ClipboardList,
-  Globe,
-  Coins,
   Activity,
-  Trophy,
+  Archive,
+  BarChart3,
+  BrainCircuit,
+  ClipboardList,
+  CreditCard,
+  Crown,
   DollarSign,
-  MessageSquare,
+  Dumbbell,
+  Globe,
+  HeartHandshake,
+  KeyRound,
+  LayoutDashboard,
   LogOut,
-  Wifi,
+  Menu,
+  MessageSquare,
   Rocket,
   ShieldCheck,
-  BrainCircuit,
-  UserCircle,
   Timer,
-  Dumbbell,
-  Crown,
-  Archive,
-  CreditCard,
-  KeyRound,
+  Trophy,
+  UserCircle,
+  Users,
+  Wifi,
   ChevronDown,
-  Menu,
+  type LucideIcon,
 } from 'lucide-react';
-import { ClientProfile } from '../data/mockData';
+import type { ClientProfile } from '../data/mockData';
+import { getAllowedModules, moduleLabel } from '../app/modules';
 import { ImperialLogoMark } from './ImperialLogoMark';
 import { getUnreadChatCountFromApi } from '../services/chatService';
 import { getRecoveryPendingCountFromApi } from '../services/recoveryService';
@@ -37,6 +40,31 @@ interface NavigationProps {
 }
 
 const fallbackAvatar = '/logo-imperial-fitness.png';
+
+const ICONS: Record<string, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  profile: UserCircle,
+  clients: Users,
+  personal_plan: ClipboardList,
+  progress_hub: BarChart3,
+  coach_hub: HeartHandshake,
+  timer: Timer,
+  exercises: Dumbbell,
+  imperial_path: Crown,
+  social: Globe,
+  chat: MessageSquare,
+  history: Archive,
+  photos: Activity,
+  body_metrics: Activity,
+  challenges: Trophy,
+  membership: CreditCard,
+  recovery: KeyRound,
+  sync: Wifi,
+  specialist_assistant: BrainCircuit,
+  user_management: ShieldCheck,
+  implementation: Rocket,
+  finance: DollarSign,
+};
 
 export const Navigation: React.FC<NavigationProps> = ({
   currentUser,
@@ -56,25 +84,16 @@ export const Navigation: React.FC<NavigationProps> = ({
 
     const refreshCounters = async () => {
       if (document.visibilityState === 'hidden') return;
-
       const chatPromise = getUnreadChatCountFromApi()
-        .then(chatCount => {
-          if (mounted) setUnreadChatCount(chatCount);
-        })
-        .catch(() => {
-          if (mounted) setUnreadChatCount(0);
-        });
+        .then(chatCount => mounted && setUnreadChatCount(chatCount))
+        .catch(() => mounted && setUnreadChatCount(0));
 
       if (currentUser.role === 'admin') {
         await Promise.allSettled([
           chatPromise,
           getRecoveryPendingCountFromApi()
-            .then(recoveryCount => {
-              if (mounted) setRecoveryPendingCount(recoveryCount);
-            })
-            .catch(() => {
-              if (mounted) setRecoveryPendingCount(0);
-            }),
+            .then(count => mounted && setRecoveryPendingCount(count))
+            .catch(() => mounted && setRecoveryPendingCount(0)),
         ]);
       } else {
         if (mounted) setRecoveryPendingCount(0);
@@ -84,9 +103,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
     timeoutId = window.setTimeout(refreshCounters, 1200);
     const interval = window.setInterval(refreshCounters, 60000);
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') refreshCounters();
-    };
+    const onVisibility = () => document.visibilityState === 'visible' && void refreshCounters();
     document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
@@ -112,40 +129,23 @@ export const Navigation: React.FC<NavigationProps> = ({
     };
   }, []);
 
-  const tabs = useMemo(() => [
-    { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard, roles: ['admin', 'trainer', 'client'] },
-    { id: 'profile', label: 'Perfil', icon: UserCircle, roles: ['admin', 'trainer', 'client'] },
-    { id: 'clients', label: 'Clientes', icon: Users, roles: ['admin', 'trainer'] },
-    { id: 'personal_plan', label: currentUser.role === 'client' ? 'Mi plan' : 'Planes', icon: ClipboardList, roles: ['admin', 'trainer', 'client'] },
-    { id: 'timer', label: 'Timer', icon: Timer, roles: ['admin', 'trainer', 'client'] },
-    { id: 'exercises', label: 'Ejercicios', icon: Dumbbell, roles: ['admin', 'trainer', 'client'] },
-    { id: 'imperial_path', label: currentUser.role === 'client' ? 'Camino Imperial' : 'Control Imperial', icon: Crown, roles: ['admin', 'trainer', 'client'] },
-    { id: 'social', label: 'Comunidad', icon: Globe, roles: ['admin', 'trainer', 'client'] },
-    { id: 'chat', label: 'Chat', icon: MessageSquare, roles: ['admin', 'trainer', 'client'] },
-    { id: 'history', label: currentUser.role === 'client' ? 'Mi Evolución' : 'Historial', icon: Archive, roles: ['admin', 'trainer', 'client'] },
-    { id: 'friends', label: 'Red social', icon: Users, roles: ['client'] },
-    { id: 'photos', label: 'Fotos de Progreso', icon: Activity, roles: ['admin', 'trainer', 'client'] },
-    { id: 'tokens', label: 'Recompensas', icon: Coins, roles: ['client'] },
-    { id: 'body_metrics', label: currentUser.role === 'client' ? 'Mis medidas' : 'Seguimiento', icon: Activity, roles: ['admin', 'trainer', 'client'] },
-    { id: 'challenges', label: 'Reto 8 semanas', icon: Trophy, roles: ['admin', 'trainer', 'client'] },
-    { id: 'membership', label: currentUser.role === 'client' ? 'Pagos' : 'Membresías', icon: CreditCard, roles: ['admin', 'client'] },
-    { id: 'recovery', label: 'Recuperación', icon: KeyRound, roles: ['admin'] },
-    { id: 'sync', label: 'Actividad', icon: Wifi, roles: ['admin'] },
-    { id: 'specialist_assistant', label: 'Asistente Coach', icon: BrainCircuit, roles: ['admin', 'trainer'] },
-    { id: 'user_management', label: 'Accesos', icon: ShieldCheck, roles: ['admin'] },
-    ...(devMode ? [{ id: 'implementation', label: 'Implementación', icon: Rocket, roles: ['admin'] }] : []),
-    { id: 'finance', label: 'Financiero', icon: DollarSign, roles: ['admin'] },
-  ], [currentUser.role, devMode]);
+  const tabs = useMemo(
+    () => getAllowedModules(currentUser.role, devMode).map(module => ({
+      ...module,
+      label: moduleLabel(module, currentUser.role),
+      icon: ICONS[module.id] || Menu,
+    })),
+    [currentUser.role, devMode],
+  );
 
-  const filteredTabs = tabs.filter(tab => tab.roles.includes(currentUser.role));
-  const activeItem = filteredTabs.find(tab => tab.id === activeTab) || filteredTabs[0];
+  const activeItem = tabs.find(tab => tab.id === activeTab) || tabs[0];
   const ActiveIcon = activeItem?.icon || Menu;
   const avatar = currentUser.avatar || fallbackAvatar;
 
   const roleDisplay = {
-    admin: { title: 'ADMINISTRADOR', color: 'border-red-600 text-red-500' },
-    trainer: { title: 'COACH PRO', color: 'border-amber-500 text-amber-500' },
-    client: { title: 'SOCIO PREMIUM', color: 'border-sky-500 text-sky-400' },
+    admin: { title: 'ADMINISTRADOR', color: 'text-red-500' },
+    trainer: { title: 'COACH PRO', color: 'text-amber-500' },
+    client: { title: 'SOCIO IMPERIAL', color: 'text-sky-400' },
   };
 
   const selectTab = (tabId: string) => {
@@ -180,7 +180,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               </span>
             </span>
             <span className="flex items-center gap-2 text-[10px] font-black uppercase text-neutral-400">
-              Módulos
+              {currentUser.role === 'client' ? 'Menú' : 'Módulos'}
               <ChevronDown className={`h-4 w-4 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
             </span>
           </button>
@@ -188,13 +188,17 @@ export const Navigation: React.FC<NavigationProps> = ({
           {menuOpen && (
             <nav
               role="menu"
-              className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 max-h-[70vh] overflow-y-auto rounded-2xl border border-neutral-800 bg-neutral-950 p-2 shadow-[0_24px_80px_rgba(0,0,0,0.75)] md:left-1/2 md:right-auto md:w-[620px] md:-translate-x-1/2"
+              className={`absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 max-h-[70vh] overflow-y-auto rounded-2xl border border-neutral-800 bg-neutral-950 p-2 shadow-[0_24px_80px_rgba(0,0,0,0.75)] md:left-1/2 md:right-auto md:-translate-x-1/2 ${currentUser.role === 'client' ? 'md:w-[420px]' : 'md:w-[620px]'}`}
             >
-              <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 md:grid-cols-3">
-                {filteredTabs.map(tab => {
+              <div className={`grid grid-cols-1 gap-1 sm:grid-cols-2 ${currentUser.role === 'client' ? '' : 'md:grid-cols-3'}`}>
+                {tabs.map(tab => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
-                  const badgeCount = tab.id === 'chat' ? unreadChatCount : tab.id === 'recovery' ? recoveryPendingCount : 0;
+                  const badgeCount = (tab.id === 'chat' || tab.id === 'coach_hub')
+                    ? unreadChatCount
+                    : tab.id === 'recovery'
+                      ? recoveryPendingCount
+                      : 0;
                   return (
                     <button
                       key={tab.id}
@@ -214,19 +218,16 @@ export const Navigation: React.FC<NavigationProps> = ({
                   );
                 })}
               </div>
+              {currentUser.role === 'client' && (
+                <p className="px-3 pb-1 pt-3 text-[10px] leading-relaxed text-neutral-500">
+                  Cinco accesos principales: hoy, plan, progreso, coach y perfil. Las herramientas secundarias aparecen dentro del flujo cuando las necesitas.
+                </p>
+              )}
             </nav>
           )}
         </div>
 
         <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
-          <button
-            type="button"
-            onClick={() => selectTab(currentUser.role === 'client' ? 'tokens' : 'imperial_path')}
-            title="Ver recompensas y progreso"
-            className="hidden items-center gap-1.5 rounded-full border border-neutral-800 bg-neutral-900 px-2.5 py-1.5 text-[11px] font-bold text-amber-400 transition hover:bg-neutral-800 sm:flex"
-          >
-            <Coins className="h-3.5 w-3.5" /> Recompensas
-          </button>
           <button type="button" onClick={() => selectTab('profile')} className="flex min-w-0 items-center gap-2 rounded-xl px-1.5 py-1 transition hover:bg-neutral-900">
             <img src={avatar} onError={(e) => { e.currentTarget.src = fallbackAvatar; }} alt={currentUser.name} className="h-8 w-8 rounded-full border border-neutral-700 bg-neutral-900 object-cover" />
             <div className="hidden text-left lg:block">
