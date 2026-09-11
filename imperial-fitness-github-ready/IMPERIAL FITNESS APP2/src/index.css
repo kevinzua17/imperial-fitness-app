@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: #000;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+@keyframes imperialExerciseMotion {
+  0%, 100% {
+    transform: scale(1.01) translate3d(-1.5%, 0, 0);
+    filter: contrast(1.03) saturate(1.05);
+  }
+  50% {
+    transform: scale(1.08) translate3d(1.5%, -1%, 0);
+    filter: contrast(1.08) saturate(1.08);
+  }
+}
+
+@keyframes imperialExerciseSweep {
+  0% { transform: translateX(-120%) skewX(-12deg); opacity: 0; }
+  20% { opacity: 0.18; }
+  55% { opacity: 0.08; }
+  100% { transform: translateX(120%) skewX(-12deg); opacity: 0; }
+}
+
+.exercise-motion-preview {
+  animation: imperialExerciseMotion 4.8s ease-in-out infinite;
+  transform-origin: center center;
+  will-change: transform, filter;
+}
+
+.exercise-motion-sweep {
+  animation: imperialExerciseSweep 3.6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exercise-motion-preview,
+  .exercise-motion-sweep {
+    animation: none;
+  }
+}
+
+@keyframes imperialRangeStart {
+  0%, 42% {
+    opacity: 1;
+    transform: scale(1.02) translateX(-1%);
+  }
+  52%, 100% {
+    opacity: 0;
+    transform: scale(1.06) translateX(-3%);
+  }
+}
+
+@keyframes imperialRangeEnd {
+  0%, 42% {
+    opacity: 0;
+    transform: scale(1.06) translateX(3%);
+  }
+  52%, 100% {
+    opacity: 1;
+    transform: scale(1.02) translateX(1%);
+  }
+}
+
+@keyframes imperialRangeArrow {
+  0%, 100% {
+    transform: translateX(-12px);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateX(12px);
+    opacity: 1;
+  }
+}
+
+.exercise-range-start {
+  animation: imperialRangeStart 3.2s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+.exercise-range-end {
+  animation: imperialRangeEnd 3.2s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+.exercise-range-arrow {
+  animation: imperialRangeArrow 1.6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exercise-range-start,
+  .exercise-range-end,
+  .exercise-range-arrow {
+    animation: none;
+  }
+
+  .exercise-range-start {
+    opacity: 1;
+  }
+
+  .exercise-range-end {
+    opacity: 0.45;
+  }
+}
